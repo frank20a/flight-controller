@@ -1,0 +1,171 @@
+menu "Flight Controller"
+    
+    config MISO2
+        int "SPI 2 MISO"
+        range 0 47
+        default 27
+        help
+            GPIO number for SPI 2 MISO
+    
+    config MOSI2
+        int "SPI 2 MOSI"
+        range 0 47
+        default 33
+        help
+            GPIO number for SPI 2 MOSI
+
+    config SCLK2
+        int "SPI 2 SCLK"
+        range 0 47
+        default 32
+        help
+            GPIO number for SPI 2 SCLK
+
+    config SCL0
+        int "I2C 0 SCL"
+        range 0 47
+        default 15
+        help
+            GPIO number for I2C 0 SCL
+    
+    config SDA0
+        int "I2C 0 SDA"
+        range 0 47
+        default 16
+        help
+            GPIO number for I2C 0 SDA
+    
+    config UART0_TX
+        int "UART 0 TX"
+        range 0 47
+        default 1
+        help
+            GPIO number for UART 0 TX (UNUSED)
+
+    config UART0_RX
+        int "UART 0 RX"
+        range 0 47
+        default 1
+        help
+            GPIO number for UART 0 RX (UNUSED)
+        
+    config UART1_TX
+        int "UART 1 TX"
+        range 0 47
+        default 17
+        help
+            GPIO number for UART 1 TX (GPS)
+    
+    config UART1_RX
+        int "UART 1 RX"
+        range 0 47
+        default 18
+        help
+            GPIO number for UART 1 RX (GPS)
+
+    config UART2_TX
+        int "UART 2 TX"
+        range 0 47
+        default 1
+        help
+            GPIO number for UART 2 TX (UNUSED)
+
+    config UART2_RX
+        int "UART 2 RX"
+        range 0 47
+        default 1
+        help
+            GPIO number for UART 2 RX (UNUSED)
+
+    config ESC1
+        int "ESC 1"
+        range 0 47
+        default 4
+        help
+            GPIO number for ESC 1
+    
+    config ESC2
+        int "ESC 2"
+        range 0 47
+        default 5
+        help
+            GPIO number for ESC 2
+
+    config ESC3
+        int "ESC 3"
+        range 0 47
+        default 7
+        help
+            GPIO number for ESC 3
+
+    config ESC4
+        int "ESC 4"
+        range 0 47
+        default 6
+        help
+            GPIO number for ESC 4
+
+    config CS_GYRO
+        int "Gyro Chip Select"
+        range 0 47
+        default 9
+        help
+            GPIO number for Gyro Chip Select
+
+    config CS_XMAG
+        int "Accelerometer/Magnetometer Chip Select"
+        range 0 47
+        default 25
+        help
+            GPIO number for XMAG Chip Select
+
+    config CS_BAR
+        int "Barometer Chip Select"
+        range 0 47
+        default 35
+        help
+            GPIO number for Barometer Chip Select
+
+    config CS_RF
+        int "Radio Chip Select"
+        range 0 47
+        default 37
+        help
+            GPIO number for Radio Chip Select
+
+    config CE_RF
+        int "Radio Chip Enable"
+        range 0 47
+        default 36
+        help
+            GPIO number for Radio Chip Enable
+    
+    config IRQ_RF
+        int "Radio Interrupt"
+        range 0 47
+        default 41
+        help
+            GPIO number for Radio Interrupt
+
+    config CS_GPS
+        int "GPS Chip Select"
+        range 0 47
+        default 42
+        help
+            GPIO number for GPS (SPI Mode) Chip Select
+            
+    config RGB
+        int "Individually Addressable RGB LEDs"
+        range 0 47
+        default 38
+        help
+            GPIO number for Individually Addressable RGB LEDs
+
+    config BUZZ
+        int "Buzzer"
+        range 0 47
+        default 8
+        help
+            GPIO number for Buzzer
+
+endmenu
