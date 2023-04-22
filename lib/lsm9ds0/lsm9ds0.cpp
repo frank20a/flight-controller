@@ -41,33 +41,39 @@ namespace LSM9DS0 {
         return true;
     }
 
-    Vector3 LSM9DS0::getAccel(){
-        Vector3 a;
+    Eigen::Vector3d LSM9DS0::getAccel(){
         byte buffer[6];
         read(XMTYPE, REGISTER_OUT_X_L_A, buffer, 6);
-        a.x = (int16_t)((int16_t)buffer[1] << 8 | buffer[0]) * a_scale * SENSORS_GRAVITY_STANDARD / 1000;
-        a.y = (int16_t)((int16_t)buffer[3] << 8 | buffer[2]) * a_scale * SENSORS_GRAVITY_STANDARD / 1000;
-        a.z = (int16_t)((int16_t)buffer[5] << 8 | buffer[4]) * a_scale * SENSORS_GRAVITY_STANDARD / 1000;
+
+        Eigen::Vector3d a(
+            (int16_t)((int16_t)buffer[1] << 8 | buffer[0]) * a_scale * SENSORS_GRAVITY_STANDARD / 1000,
+            (int16_t)((int16_t)buffer[3] << 8 | buffer[2]) * a_scale * SENSORS_GRAVITY_STANDARD / 1000,
+            (int16_t)((int16_t)buffer[5] << 8 | buffer[4]) * a_scale * SENSORS_GRAVITY_STANDARD / 1000
+        );
         return a;
     }
 
-    Vector3 LSM9DS0::getMag(){
-        Vector3 m;
+    Eigen::Vector3d LSM9DS0::getMag(){
         byte buffer[6];
         read(XMTYPE, REGISTER_OUT_X_L_M, buffer, 6);
-        m.x = (int16_t)((int16_t)buffer[1] << 8 | buffer[0]) * m_scale / 10;
-        m.y = (int16_t)((int16_t)buffer[3] << 8 | buffer[2]) * m_scale / 10;
-        m.z = (int16_t)((int16_t)buffer[5] << 8 | buffer[4]) * m_scale / 10;
+
+        Eigen::Vector3d m(
+            (int16_t)((int16_t)buffer[1] << 8 | buffer[0]) * m_scale / 10,
+            (int16_t)((int16_t)buffer[3] << 8 | buffer[2]) * m_scale / 10,
+            (int16_t)((int16_t)buffer[5] << 8 | buffer[4]) * m_scale / 10
+        );
         return m;
     }
 
-    Vector3 LSM9DS0::getGyro(){
-        Vector3 g;
+    Eigen::Vector3d LSM9DS0::getGyro(){
         byte buffer[6];
         read(GYROTYPE, REGISTER_OUT_X_L_G, buffer, 6);
-        g.x = (int16_t)((int16_t)buffer[1] << 8 | buffer[0]) * g_scale * SENSORS_DPS_TO_RADS;
-        g.y = (int16_t)((int16_t)buffer[3] << 8 | buffer[2]) * g_scale * SENSORS_DPS_TO_RADS;
-        g.z = (int16_t)((int16_t)buffer[5] << 8 | buffer[4]) * g_scale * SENSORS_DPS_TO_RADS;
+        
+        Eigen::Vector3d g(
+            (int16_t)((int16_t)buffer[1] << 8 | buffer[0]) * g_scale * SENSORS_DPS_TO_RADS,
+            (int16_t)((int16_t)buffer[3] << 8 | buffer[2]) * g_scale * SENSORS_DPS_TO_RADS,
+            (int16_t)((int16_t)buffer[5] << 8 | buffer[4]) * g_scale * SENSORS_DPS_TO_RADS
+        );
         return g;
     }
 

@@ -3,7 +3,7 @@
 namespace AHRS {
     void measure_task(void *params_) {
         ahrs_task_parameters *params = (ahrs_task_parameters *)params_;
-        Vector3 tmp;
+        Eigen::Vector3d tmp;
 
         while(true) {
             if(xSemaphoreTake(*(params->spi_mutex), portMAX_DELAY)){

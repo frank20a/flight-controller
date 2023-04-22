@@ -2,8 +2,9 @@
 
 #include <Arduino.h>
 #include <SPI.h>
+#include <ArduinoEigen.h>
 
-#include "datatypes.h"
+// #include "datatypes.h"
 
 // Constants
 #define SENSORS_GRAVITY_EARTH (9.80665F)
@@ -52,9 +53,9 @@ namespace LSM9DS0 {
         LSM9DS0(SPIClass *spi_);
         
         bool begin();
-        Vector3 getAccel();
-        Vector3 getMag();
-        Vector3 getGyro();
+        Eigen::Vector3d getAccel();
+        Eigen::Vector3d getMag();
+        Eigen::Vector3d getGyro();
         float getTemp();
 
         typedef enum {
