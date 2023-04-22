@@ -53,9 +53,9 @@ namespace LSM9DS0 {
         LSM9DS0(SPIClass *spi_);
         
         bool begin();
-        Eigen::Vector3d getAccel();
-        Eigen::Vector3d getMag();
-        Eigen::Vector3d getGyro();
+        Eigen::Vector3f getAccel();
+        Eigen::Vector3f getMag();
+        Eigen::Vector3f getGyro();
         float getTemp();
 
         typedef enum {

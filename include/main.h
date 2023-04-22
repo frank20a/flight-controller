@@ -24,7 +24,7 @@ SemaphoreHandle_t uart0_mutex = xSemaphoreCreateMutex();
 // Shared memory
 Eigen::Quaternion<float> imu_fused;
 SemaphoreHandle_t imu_fused_mutex = xSemaphoreCreateMutex();
-Eigen::Vector3d acc_raw, mag_raw, gyro_raw;
+Eigen::Vector3f acc_raw, mag_raw, gyro_raw;
 SemaphoreHandle_t acc_raw_mutex = xSemaphoreCreateMutex();
 SemaphoreHandle_t mag_raw_mutex = xSemaphoreCreateMutex();
 SemaphoreHandle_t gyro_raw_mutex = xSemaphoreCreateMutex();
@@ -37,3 +37,10 @@ LSM9DS0::LSM9DS0 lsm = LSM9DS0::LSM9DS0(&SPI2);
 
 // Task Parameters
 AHRS::ahrs_task_parameters params_a, params_m, params_g;
+AHRS::madwick_task_parameters params_ahrs;
+
+// Utility Functions
+void write_imu_fused();
+void print_imu_fused();
+void write_imu_raw();
+void print_imu_raw();

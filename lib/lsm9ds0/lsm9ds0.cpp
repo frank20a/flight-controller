@@ -41,11 +41,11 @@ namespace LSM9DS0 {
         return true;
     }
 
-    Eigen::Vector3d LSM9DS0::getAccel(){
+    Eigen::Vector3f LSM9DS0::getAccel(){
         byte buffer[6];
         read(XMTYPE, REGISTER_OUT_X_L_A, buffer, 6);
 
-        Eigen::Vector3d a(
+        Eigen::Vector3f a(
             (int16_t)((int16_t)buffer[1] << 8 | buffer[0]) * a_scale * SENSORS_GRAVITY_STANDARD / 1000,
             (int16_t)((int16_t)buffer[3] << 8 | buffer[2]) * a_scale * SENSORS_GRAVITY_STANDARD / 1000,
             (int16_t)((int16_t)buffer[5] << 8 | buffer[4]) * a_scale * SENSORS_GRAVITY_STANDARD / 1000
@@ -53,11 +53,11 @@ namespace LSM9DS0 {
         return a;
     }
 
-    Eigen::Vector3d LSM9DS0::getMag(){
+    Eigen::Vector3f LSM9DS0::getMag(){
         byte buffer[6];
         read(XMTYPE, REGISTER_OUT_X_L_M, buffer, 6);
 
-        Eigen::Vector3d m(
+        Eigen::Vector3f m(
             (int16_t)((int16_t)buffer[1] << 8 | buffer[0]) * m_scale / 10,
             (int16_t)((int16_t)buffer[3] << 8 | buffer[2]) * m_scale / 10,
             (int16_t)((int16_t)buffer[5] << 8 | buffer[4]) * m_scale / 10
@@ -65,11 +65,11 @@ namespace LSM9DS0 {
         return m;
     }
 
-    Eigen::Vector3d LSM9DS0::getGyro(){
+    Eigen::Vector3f LSM9DS0::getGyro(){
         byte buffer[6];
         read(GYROTYPE, REGISTER_OUT_X_L_G, buffer, 6);
         
-        Eigen::Vector3d g(
+        Eigen::Vector3f g(
             (int16_t)((int16_t)buffer[1] << 8 | buffer[0]) * g_scale * SENSORS_DPS_TO_RADS,
             (int16_t)((int16_t)buffer[3] << 8 | buffer[2]) * g_scale * SENSORS_DPS_TO_RADS,
             (int16_t)((int16_t)buffer[5] << 8 | buffer[4]) * g_scale * SENSORS_DPS_TO_RADS
