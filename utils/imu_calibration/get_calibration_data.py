@@ -21,9 +21,7 @@ def test(port: str = 'COM9', baud: int = 576000):
             if cmd == 'q':
                 break
 
-def measure(dur: int, port: str = 'COM9', baud: int = 576000):
-    global dt
-    
+def measure_static(dur: int, port: str = 'COM9', baud: int = 576000):    
     with serial.Serial(port, baud) as ser:
         data = []
         
@@ -58,8 +56,29 @@ def measure(dur: int, port: str = 'COM9', baud: int = 576000):
     with open('./utils/data/calib_data.pkl', 'wb') as f:
         pickle.dump(res, f)
     return res
-                
+             
+def measure_moving(dur: int, port: str = 'COM9', baud: int = 576000):    
+    with serial.Serial(port, baud) as ser:
+        data = []
+        
+        ser.flush()
+        ser.flushInput()
+        for j in range(int(dur / dt)):
+            raw = ser.read(4 * 9)
+            if len(raw) != 4 * 9:
+                print ('Error: read {} bytes'.format(len(raw)))
+                continue
+            ax, ay, az, mx, my, mz, gx, gy, gz = struct.unpack('f'*9, raw)
             
+            if abs(ax) > 80 or abs(ay) > 80 or abs(az) > 80 or abs(mx) > 200 or abs(my) > 200 or abs(mz) > 200 or abs(gx) > 20 or abs(gy) > 20 or abs(gz) > 20:
+                ser.flush()
+                ser.flushInput()
+                continue
+            
+            data += [[ax, ay, az, mx, my, mz, gx, gy, gz]]
+            
+    return np.array(data)
+                          
 def countdown(dur: int):
     for i in range(dur, 0, -1):
         print (f'Starting in {i}...')
@@ -69,6 +88,9 @@ def countdown(dur: int):
 
 
 test()
-
 print('Starting Measurements')
-data = measure(50)
+countdown(5)
+data = measure_moving(30)
+
+with open('./utils/data/calib_data_2.pkl', 'wb') as f:
+    pickle.dump(data, f)

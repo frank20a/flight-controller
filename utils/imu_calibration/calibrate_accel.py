@@ -16,7 +16,7 @@ def accel_cost(x, data):
     return res
 
 
-with open('./utils/data/calib_data.pkl', 'rb') as f:
+with open('./utils/data/calib_data_1.pkl', 'rb') as f:
     data = pickle.load(f)
 
 print('Data Collected! Calibrating...')
@@ -26,19 +26,7 @@ res = minimize(
     method = 'SLSQP',
     options={
         'disp': True,
-        'maxiter': 2000,
     },
-    bounds=(
-        (-0.05, 0.05),
-        (-0.05, 0.05),
-        (-0.05, 0.05),
-        (0.9, 1.1),
-        (0.9, 1.1),
-        (0.9, 1.1),
-        (-1.5, 1.5),
-        (-1.5, 1.5),
-        (-1.5, 1.5),
-    )
 )
 Ta = np.array([[1, res.x[2], -res.x[1]], [-res.x[2], 1, res.x[0]], [res.x[1], -res.x[0], 1]])
 Ka = np.array([[res.x[3], 0, 0], [0, res.x[4], 0], [0, 0, res.x[5]]])
