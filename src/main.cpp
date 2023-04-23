@@ -65,7 +65,7 @@ void setup() {
 void loop() {
   // print_imu_raw();
   write_imu_raw();
-  delay(10);
+  delay(100);
 }
 
 void write_imu_fused() {

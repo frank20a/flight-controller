@@ -19,7 +19,7 @@ mesh = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.5, origin=[0, 0,
 vis.add_geometry(mesh)
 
 print("Openning Serial port...")
-with serial.Serial('COM9', 115200) as ser:
+with serial.Serial('COM9', 576000) as ser:
     data = np.array([0] * 9)
     
     ser.flushInput()

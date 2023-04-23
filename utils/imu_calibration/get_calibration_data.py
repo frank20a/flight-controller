@@ -89,8 +89,8 @@ def countdown(dur: int):
 
 test()
 print('Starting Measurements')
-countdown(5)
+countdown(3)
 data = measure_moving(30)
 
-with open('./utils/data/calib_data_2.pkl', 'wb') as f:
+with open('./utils/data/calib_data_3.pkl', 'wb') as f:
     pickle.dump(data, f)

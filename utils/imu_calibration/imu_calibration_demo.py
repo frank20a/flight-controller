@@ -1,12 +1,20 @@
 import matplotlib.pyplot as plt, numpy as np, pickle
 
 
+# ACCELEROMETER CALIBRATION
+
 with open('./utils/data/calib_data_1.pkl', 'rb') as f:
     data = pickle.load(f)
 
 with open('./utils/data/accel_calib.pkl', 'rb') as f:
     Ta, Ka, ba = pickle.load(f)
-print(f'Ta =\n{Ta}\nKa =\n{Ka}\nba =\n{ba}\n\n\n')
+
+print("Accelerometer Calibration Parameters:")
+print("Aa =\n")
+for row in Ta @ Ka:
+    print(f'{row[0]:.15f}, {row[1]:.15f}, {row[2]:.15f}')
+print("\nba =\n")
+print(f'{ba[0]:.15f}, {ba[1]:.15f}, {ba[2]:.15f}\n\n\n')
     
 
 calibrated_accel = []
@@ -66,7 +74,12 @@ with open('./utils/data/calib_data_2.pkl', 'rb') as f:
 
 with open('./utils/data/mag_calib.pkl', 'rb') as f:
     Am, bm = pickle.load(f)
-print(f'Am =\n{Am}\nbm =\n{bm}\n\n\n')
+print("Magnetometer Calibration Parameters:")
+print("Am =\n")
+for row in Am:
+    print(f'{row[0]:.15f}, {row[1]:.15f}, {row[2]:.15f}')
+print("\nbm =\n")
+print(f'{bm[0]:.15f}, {bm[1]:.15f}, {bm[2]:.15f}\n\n\n')
 
 calibrated_mag = []
 for row in data:
@@ -120,5 +133,49 @@ ax4.set_xlabel('Mag X (uT)')
 ax4.set_ylabel('Mag Y (uT)')
 ax4.legend()
 ax4.set_title('Magnetometer XZ Scatter')
+
+
+# GYROSCOPE CALIBRATION
+
+with open('./utils/data/calib_data_3.pkl', 'rb') as f:
+    data = pickle.load(f)
+print(data)
+
+with open('./utils/data/gyro_calib.pkl', 'rb') as f:
+    bg = pickle.load(f)
+print("Gyroscope Calibration Parameters:")
+print("bg =\n")
+print(f'{bg[0]:.15f}, {bg[1]:.15f}, {bg[2]:.15f}\n\n\n')
+
+calibrated_gyro = []
+for row in data:
+    calibrated_gyro += [row[6:9] - bg]
+calibrated_gyro = np.array(calibrated_gyro)
+
+fig = plt.figure(figsize=(11, 9))
+fig.tight_layout()
+fig.suptitle('Gyroscope Bias Calibration')
+fig.subplots_adjust(left=0.11, bottom=0.055, right=0.93, top=0.91, wspace=0.3, hspace=0.24)
+    
+ax1 = fig.add_subplot(2, 1, 1)
+ax1.plot(data[:, 6], color='red', label="X Axis")
+ax1.plot(data[:, 7], color='green', label="Y Axis")
+ax1.plot(data[:, 8], color='blue', label="Z Axis")
+ax1.set_xlabel('Time (s)')
+ax1.set_ylabel('Angular Rate (rad/s)')
+ax1.set_xticks(np.linspace(0, data.shape[0], 7), np.arange(0, 31, 5))
+ax1.legend()
+ax1.set_title('Uncalibrated Gyroscope Data')
+
+
+ax2 = fig.add_subplot(2, 1, 2)
+ax2.plot(calibrated_gyro[:, 0], color='red', label="X Axis")
+ax2.plot(calibrated_gyro[:, 1], color='green', label="Y Axis")
+ax2.plot(calibrated_gyro[:, 2], color='blue', label="Z Axis")
+ax2.set_xlabel('Time (s)')
+ax2.set_ylabel('Angular Rate (rad/s)')
+ax2.set_xticks(np.linspace(0, data.shape[0], 7), np.arange(0, 31, 5))
+ax2.legend()
+ax2.set_title('Calibrated Gyroscope Data')
 
 plt.show()
