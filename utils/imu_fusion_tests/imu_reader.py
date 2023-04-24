@@ -1,7 +1,7 @@
 import serial, struct, pandas as pd, numpy as np
 from matplotlib import pyplot as plt
 
-with serial.Serial('COM9', 576000, timeout=1) as ser:
+with serial.Serial('/dev/ttyUSB0', 576000, timeout=1) as ser:
     data = np.array([0] * 9)
     
     ser.flushInput()
