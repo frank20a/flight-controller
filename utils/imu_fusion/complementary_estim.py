@@ -1,6 +1,6 @@
 import sys, numpy as np
 from utils import rpy2quat
-from ahrs import AHRSEstimator
+from ahrs_ import AHRSEstimator
 from copy import deepcopy
 
 
