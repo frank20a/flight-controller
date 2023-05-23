@@ -1,0 +1,13 @@
+Patras Greece (38.246242, 21.735084):
+    North: 26498.9 nT
+    East: 2256.2 nT
+    Vertical: 37922.0 nT
+
+    Total: 46309.0 nT
+
+Athens, Greece (37.9839412, 23.7283052):
+    North: 26607.4 nT
+    East: 2359.9 nT
+    Vertical: 37942.2 nT
+
+    Total: 46401.8 nT

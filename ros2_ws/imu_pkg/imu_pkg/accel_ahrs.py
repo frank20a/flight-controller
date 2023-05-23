@@ -72,16 +72,22 @@ class IMUPublisher(Node):
         sa_ = np.array(quaternion_multiply(quaternion_multiply(quaternion_conjugate(self.mahony_state), np.array([0, 0, 9.81, 0])), self.mahony_state))
         sm_ = np.array(quaternion_multiply(quaternion_multiply(quaternion_conjugate(self.mahony_state), np.array([26.6068, 2.3557, 46.3964, 0])), self.mahony_state))
         
-        sw_mest = np.cross(sa, sa_[:3]) + np.cross(sm, sm_[:3])
+        a_err = np.cross(sa, sa_[:3])
+        a_err /= np.linalg.norm(a_err)
+        
+        m_err = np.cross(sm, sm_[:3])
+        m_err /= np.linalg.norm(m_err)
+        
+        sw_mest = a_err + m_err
         sw_ = -self.mahony_Ki * sw_mest * self.dt
         
         sw_rqt = \
-            np.array((gx, gy, gz, 0)) * self.dt * self.dt - \
+            np.array((gx, gy, gz, 0)) - \
             np.array((sw_[0], sw_[1], sw_[2], 0)) + \
             self.mahony_Kp * np.array((sw_mest[0], sw_mest[1], sw_mest[2], 0))
             
         self.mahony_state = self.mahony_state + 0.5 * np.array(quaternion_multiply(self.mahony_state, sw_rqt)) * self.dt
-        # self.mahony_state /= (self.mahony_state[0]**2 + self.mahony_state[1]**2 + self.mahony_state[2]**2 + self.mahony_state[3]**2)**0.5
+        self.mahony_state /= (self.mahony_state[0]**2 + self.mahony_state[1]**2 + self.mahony_state[2]**2 + self.mahony_state[3]**2)**0.5
         
         send_quat(self.mahony_state, self.mahony_pub, now, offset=[1, -1, 0])
         

@@ -43,7 +43,7 @@ void setup() {
     .type = IMU_SENSORTYPE_GYRO,
   };
   xTaskCreate(AHRS::measure_task, "GYRO", 1024, &params_g, 1, NULL);
-  // ==== RC ====
+  // ==== RC ====h
   // ==== AHRS ====
   params_ahrs = {
     .fused = &imu_fused,
@@ -63,8 +63,8 @@ void setup() {
 }
 
 void loop() {
-  // print_imu_raw();
-  write_imu_raw();
+  print_imu_raw();
+  // write_imu_rawf();
   
   delay(10);
 }
