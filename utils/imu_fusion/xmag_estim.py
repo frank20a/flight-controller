@@ -2,6 +2,7 @@ import sys, numpy as np
 from utils import rpy2quat
 from ahrs_ import AHRSEstimator
 
+
 class AHRSAccel(AHRSEstimator):
     def calculate(self) -> np.ndarray:
         q = np.empty((self.accel.shape[0], 4))

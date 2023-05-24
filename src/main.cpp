@@ -43,21 +43,9 @@ void setup() {
     .type = IMU_SENSORTYPE_GYRO,
   };
   xTaskCreate(AHRS::measure_task, "GYRO", 1024, &params_g, 1, NULL);
-  // ==== RC ====h
   // ==== AHRS ====
-  params_ahrs = {
-    .fused = &imu_fused,
-    .fused_mutex = &imu_fused_mutex,
-    .acc_raw = &acc_raw,
-    .mag_raw = &mag_raw,
-    .gyro_raw = &gyro_raw,
-    .acc_raw_mutex = &acc_raw_mutex,
-    .mag_raw_mutex = &mag_raw_mutex,
-    .gyro_raw_mutex = &gyro_raw_mutex,
-    .beta = 0.1,
-    .rate = 100,
-  };
-  xTaskCreate(AHRS::madwick_task, "AHRS", 1024, &params_ahrs, 1, NULL);
+  
+  // ==== RC ====
   // ==== Control ====
   // ==== GPS ====
 }
