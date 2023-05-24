@@ -22,9 +22,9 @@ namespace AHRS {
     void measure_task(void *params_);
 
     struct ahrs_init_parameters {
-        Eigen::Vector3f *a = NULL, *m = NULL, *g = NULL, *rpy;
+        Eigen::Vector3f *a, *m, *g, *rpy;
         Eigen::Quaternion<float> *q;
-        SemaphoreHandle_t *a_mutex = NULL, *m_mutex = NULL, *g_mutex = NULL, *fused_mutex;
+        SemaphoreHandle_t *a_mutex, *m_mutex, *g_mutex, *fused_mutex;
         float dt;
     };
 
@@ -49,15 +49,14 @@ namespace AHRS {
                 this->q->setIdentity();
                 this->rpy->setZero();
             }
-            virtual void run();
-
-        protected:
             virtual void update() = 0;
 
+            float dt;
+
+        protected:
             Eigen::Vector3f *a, *m, *g, *rpy;
             Eigen::Quaternion<float> *q;
             SemaphoreHandle_t *a_mutex, *m_mutex, *g_mutex, *fused_mutex;
-            float dt;
     };
 
     class Gyro : public AHRS {
@@ -107,4 +106,5 @@ namespace AHRS {
             float beta, zeta;
     };
 
+    void run_ahrs(void *ahrs);
 }

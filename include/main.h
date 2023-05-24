@@ -37,8 +37,66 @@ SPIClass SPI2 = SPIClass(HSPI);
 LSM9DS0::LSM9DS0 lsm = LSM9DS0::LSM9DS0(&SPI2);
 
 // Task Parameters
-AHRS::meas_task_parameters params_a, params_m, params_g;
-AHRS::Gyro *gyro_filter;
+AHRS::meas_task_parameters params_a = {
+    .lsm = &lsm,
+    .spi_mutex = &spi2_mutex,
+    .data_mutex = &acc_raw_mutex,
+    .shared_data = &acc_raw,
+    .rate = 400,
+    .type = IMU_SENSORTYPE_ACCEL,
+    .calib = USE_CALIBRATE,
+};
+AHRS::meas_task_parameters params_m = {
+    .lsm = &lsm,
+    .spi_mutex = &spi2_mutex,
+    .data_mutex = &mag_raw_mutex,
+    .shared_data = &mag_raw,
+    .rate = 100,
+    .type = IMU_SENSORTYPE_MAG,
+    .calib = USE_CALIBRATE,
+};
+AHRS::meas_task_parameters params_g = {
+    .lsm = &lsm,
+    .spi_mutex = &spi2_mutex,
+    .data_mutex = &gyro_raw_mutex,
+    .shared_data = &gyro_raw,
+    .rate = 190,
+    .type = IMU_SENSORTYPE_GYRO,
+    .calib = USE_CALIBRATE,
+};
+AHRS::ahrs_init_parameters params_filter = {
+    .a = &acc_raw,
+    .m = &mag_raw,
+    .g = &gyro_raw,
+    .rpy = &rpy_fused,
+    .q = &imu_fused,
+    .a_mutex = &acc_raw_mutex,
+    .m_mutex = &mag_raw_mutex,
+    .g_mutex = &gyro_raw_mutex,
+    .fused_mutex = &imu_fused_mutex,
+    .dt = 1.0 / AHRS_RATE,
+};
+
+// AHRS Filters
+#if defined(AHRS_GYRO)
+    AHRS::Gyro *ahrs_filter = new AHRS::Gyro(&params_filter); 
+#elif defined(AHRS_XMAG)
+    AHRS::XMag *ahrs_filter = new AHRS::XMag(&params_filter);
+#elif defined(AHRS_COMPLEMENTARY)
+    #ifndef AHRS_COMPLEMENTARY_ALPHA
+        #error "AHRS_COMPLEMENTARY_BETA not defined"
+    #endif
+    AHRS::Complementary *ahrs_filter = new AHRS::Complementary(&params_filter, AHRS_COMPLEMENTARY_ALPHA);
+#elif defined(AHRS_MAHONY)
+    #if !defined(AHRS_MAHONY_KI) || !defined(AHRS_MAHONY_KP)
+        #error "AHRS_MAHONY_KI and/or AHRS_MAHONY_KP not defined"
+    #endif
+#elif defined(AHRS_MADGWICK)
+    #if !defined(AHRS_MADGWICK_BETA) || !defined(AHRS_MADGWICK_ZETA)
+        #error "AHRS_MADGWICK_BETA and/or AHRS_MADGWICK_ZETA not defined"
+    #endif
+    AHRS::Madgwick *ahrs_filter = new AHRS::Madgwick(&params_filter, AHRS_MADGWICK_BETA, AHRS_MADGWICK_ZETA);
+#endif
 
 // Utility Functions
 void write_imu_fused();

@@ -1,6 +1,8 @@
-import serial, struct, numpy as np, time, pickle
+import serial, struct, numpy as np, time, pickle, sys
 
 dt = 10e-3
+
+sensor = sys.argv[1]
 
 
 def test(port: str = 'COM9', baud: int = 576000):
@@ -20,6 +22,7 @@ def test(port: str = 'COM9', baud: int = 576000):
             cmd = input("Press enter to retest, q to quit...")
             if cmd == 'q':
                 break
+
 
 def measure_static(dur: int, port: str = 'COM9', baud: int = 576000):    
     with serial.Serial(port, baud) as ser:
@@ -56,7 +59,8 @@ def measure_static(dur: int, port: str = 'COM9', baud: int = 576000):
     with open('./utils/data/calib_data.pkl', 'wb') as f:
         pickle.dump(res, f)
     return res
-             
+
+
 def measure_moving(dur: int, port: str = 'COM9', baud: int = 576000):    
     with serial.Serial(port, baud) as ser:
         data = []
@@ -78,7 +82,8 @@ def measure_moving(dur: int, port: str = 'COM9', baud: int = 576000):
             data += [[ax, ay, az, mx, my, mz, gx, gy, gz]]
             
     return np.array(data)
-                          
+
+
 def countdown(dur: int):
     for i in range(dur, 0, -1):
         print (f'Starting in {i}...')
@@ -87,10 +92,13 @@ def countdown(dur: int):
     return True
 
 
-test()
+test('COM10')
 print('Starting Measurements')
 countdown(3)
-data = measure_moving(30)
+if sensor == 'accel':
+    data = measure_static(50, 'COM10')
+else:
+    data = measure_moving(30, 'COM10')
 
-with open('./utils/data/calib_data_3.pkl', 'wb') as f:
+with open(f'./utils/data/{sensor}_calib_data.pkl', 'wb') as f:
     pickle.dump(data, f)

@@ -1,17 +1,19 @@
-import matplotlib.pyplot as plt, numpy as np, pickle
+import matplotlib.pyplot as plt, numpy as np, pickle, json
 
 
 # ACCELEROMETER CALIBRATION
 
-with open('./utils/data/calib_data_1.pkl', 'rb') as f:
+with open('./utils/data/accel_calib_data.pkl', 'rb') as f:
     data = pickle.load(f)
 
-with open('./utils/data/accel_calib.pkl', 'rb') as f:
-    Ta, Ka, ba = pickle.load(f)
+with open('./utils/data/accel_calib.json', 'r') as f:
+    tmp = json.load(f)
+    Aa = np.array(tmp['A'])
+    ba = np.array(tmp['b'])
 
 print("Accelerometer Calibration Parameters:")
 print("Aa =\n")
-for row in Ta @ Ka:
+for row in Aa:
     print(f'{row[0]:.15f}, {row[1]:.15f}, {row[2]:.15f}')
 print("\nba =\n")
 print(f'{ba[0]:.15f}, {ba[1]:.15f}, {ba[2]:.15f}\n\n\n')
@@ -19,7 +21,7 @@ print(f'{ba[0]:.15f}, {ba[1]:.15f}, {ba[2]:.15f}\n\n\n')
 
 calibrated_accel = []
 for row in data:
-    calibrated_accel += [Ta@Ka@(row[:3] - ba)]
+    calibrated_accel += [Aa @ (row[:3] - ba)]
 calibrated_accel = np.array(calibrated_accel)
 
 fig = plt.figure(figsize=(11, 9))
@@ -69,11 +71,13 @@ ax4.set_title('Accelerometer XZ Scatter')
 
 # MAGNETOMETER CALIBRATION
 
-with open('./utils/data/calib_data_2.pkl', 'rb') as f:
+with open('./utils/data/mag_calib_data.pkl', 'rb') as f:
     data = pickle.load(f)
 
-with open('./utils/data/mag_calib.pkl', 'rb') as f:
-    Am, bm = pickle.load(f)
+with open('./utils/data/mag_calib.json', 'r') as f:
+    tmp = json.load(f)
+    Am = np.array(tmp['A'])
+    bm = np.array(tmp['b'])
 print("Magnetometer Calibration Parameters:")
 print("Am =\n")
 for row in Am:
@@ -83,7 +87,7 @@ print(f'{bm[0]:.15f}, {bm[1]:.15f}, {bm[2]:.15f}\n\n\n')
 
 calibrated_mag = []
 for row in data:
-    calibrated_mag += [Am@(row[3:6] - bm)]
+    calibrated_mag += [Am @ (row[3:6] - bm)]
 calibrated_mag = np.array(calibrated_mag)
 
 fig = plt.figure(figsize=(11, 9))
@@ -107,8 +111,8 @@ ax2.scatter(data[:, 3], data[:, 4], color='red', marker='x', label='Raw Data')
 ax2.scatter(calibrated_mag[:, 0], calibrated_mag[:, 1], color='blue', marker='x', label='Calibrated Data')
 ax2.set_xlabel('Mag X (uT)')
 ax2.set_ylabel('Mag Y (uT)')
-ax2.set_xlim(-90, 105)
-ax2.set_ylim(-130, 55)
+ax2.set_xlim(-85, 75)
+ax2.set_ylim(-55, 95)
 ax2.legend()
 ax2.set_title('Magnetometer XY Scatter')
 
@@ -119,8 +123,8 @@ ax3.scatter(data[:, 4], data[:, 5], color='red', marker='x', label='Raw Data')
 ax3.scatter(calibrated_mag[:, 1], calibrated_mag[:, 2], color='blue', marker='x', label='Calibrated Data')
 ax3.set_xlabel('Mag X (uT)')
 ax3.set_ylabel('Mag Y (uT)')
-ax3.set_xlim(-130, 55)
-ax3.set_ylim(-95, 90)
+ax3.set_xlim(-50, 90)
+ax3.set_ylim(-70, 50)
 ax3.legend()
 ax3.set_title('Magnetometer YZ Scatter')
 
@@ -137,12 +141,13 @@ ax4.set_title('Magnetometer XZ Scatter')
 
 # GYROSCOPE CALIBRATION
 
-with open('./utils/data/calib_data_3.pkl', 'rb') as f:
+with open('./utils/data/gyro_calib_data.pkl', 'rb') as f:
     data = pickle.load(f)
 print(data)
 
-with open('./utils/data/gyro_calib.pkl', 'rb') as f:
-    bg = pickle.load(f)
+with open('./utils/data/gyro_calib.json', 'r') as f:
+    tmp = json.load(f)
+    bg = np.array(tmp['b'])
 print("Gyroscope Calibration Parameters:")
 print("bg =\n")
 print(f'{bg[0]:.15f}, {bg[1]:.15f}, {bg[2]:.15f}\n\n\n')
