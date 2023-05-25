@@ -49,6 +49,11 @@ namespace AHRS {
                 this->q->setIdentity();
                 this->rpy->setZero();
             }
+            void task();
+            void start_task();
+            static void task_wrapper(void *pvParam) {
+                static_cast<AHRS*>(pvParam)->task();
+            }
             virtual void update() = 0;
 
             float dt;
@@ -94,8 +99,8 @@ namespace AHRS {
     class Madgwick : public AHRS {
         public:
             Madgwick(void *params_, float beta, float zeta) : AHRS(params_) { 
-                this->beta = sqrt(3/4) * beta;
-                this->zeta = sqrt(3/4) * zeta;
+                this->beta = sqrt(3.0/4.0) * beta;
+                this->zeta = sqrt(3.0/4.0) * zeta;
                 q_.setIdentity();
                 w_b.setIdentity();
             };

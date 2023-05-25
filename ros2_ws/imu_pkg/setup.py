@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'accel_ahrs= imu_pkg.accel_ahrs:main'
+            'accel_publisher= imu_pkg.accel_pub:main'
         ],
     },
 )

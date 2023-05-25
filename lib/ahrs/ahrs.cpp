@@ -1,19 +1,45 @@
 #include "ahrs.h"
 
+Eigen::Vector3f quat2eul(Eigen::Quaternion<float> q){
+    Eigen::Vector3f rpy;
+    rpy(0) = atan2(2*(q.w()*q.x() + q.y()*q.z()), 1 - 2*(q.x()*q.x() + q.y()*q.y()));
+    rpy(1) = asin(2*(q.w()*q.y() - q.z()*q.x()));
+    rpy(2) = atan2(2*(q.w()*q.z() + q.x()*q.y()), 1 - 2*(q.y()*q.y() + q.z()*q.z()));
+    return rpy;
+}
+
+Eigen::Quaternion<float> eul2quat(Eigen::Vector3f rpy){
+    Eigen::Quaternion<float> q;
+    float cy = cos(rpy(2) * 0.5);
+    float sy = sin(rpy(2) * 0.5);
+    float cp = cos(rpy(1) * 0.5);
+    float sp = sin(rpy(1) * 0.5);
+    float cr = cos(rpy(0) * 0.5);
+    float sr = sin(rpy(0) * 0.5);
+
+    q.w() = cy * cp * cr + sy * sp * sr;
+    q.x() = cy * cp * sr - sy * sp * cr;
+    q.y() = sy * cp * sr + cy * sp * cr;
+    q.z() = sy * cp * cr - cy * sp * sr;
+
+    return q;
+}
+
+
 namespace AHRS {
     Eigen::Matrix3f Aa {
         { 0.973209,  0.006248, -0.000107},
         { 0.006248,  0.959535,  0.000811},
         {-0.000107,  0.000811,  1.019086}
     };
-    Eigen::Vector3f ba {-15.850987, 46.848109, -15.884498};
+    Eigen::Vector3f ba {-0.611425, 0.195279, -0.229477};
 
     Eigen::Matrix3f Am {
         { 1.024384, -0.067449,  0.005591},
         {-0.067449,  0.984567, -0.059303},
         { 0.005591, -0.059303,  1.093657}
     };
-    Eigen::Vector3f bm {16.565142000000002, -74.437627000000006, -3.953151000000000};
+    Eigen::Vector3f bm {-15.850987, 46.848109, -15.884498};
 
     Eigen::Vector3f bg {0.08786329216688561, 0.011035891374165658, 0.20763187215725581};
     
@@ -48,12 +74,14 @@ namespace AHRS {
         }
     }
 
-    void run_ahrs(void *ahrs_) {
-        AHRS *ahrs = (AHRS *)ahrs_;
+    void AHRS::start_task() {
+        xTaskCreate(task_wrapper, "AHRS", 2048, this, 1, NULL);
+    }
 
+    void AHRS::task() {
         while(true) {
-            ahrs->update();
-            vTaskDelay(pdMS_TO_TICKS(ahrs->dt * 1000));
+            this->update();
+            vTaskDelay(pdMS_TO_TICKS(this->dt * 1000));
         }
     }
 
@@ -69,10 +97,8 @@ namespace AHRS {
 
         if(xSemaphoreTake(*fused_mutex, 0)){
             *rpy = rpy_;
-            *q = Eigen::AngleAxisf(rpy_(2), Eigen::Vector3f::UnitZ()) *
-                 Eigen::AngleAxisf(rpy_(1), Eigen::Vector3f::UnitY()) *
-                 Eigen::AngleAxisf(rpy_(0), Eigen::Vector3f::UnitX());
-            q->normalize();
+            *q = eul2quat(rpy_);
+            // q->normalize();
 
             xSemaphoreGive(*fused_mutex);
         }
@@ -91,8 +117,10 @@ namespace AHRS {
             xSemaphoreGive(*m_mutex);
         }
         
+        m->normalize();
+
         float roll = atan2(a_.y(), a_.z());
-        float pitch = asin(-a_.x() / a_.norm());
+        float pitch = asin(-a_.x() / sqrt(a_.x() * a_.x() + a_.y() * a_.y() + a_.z() * a_.z()));
         rpy_ = Eigen::Vector3f(
             roll,
             pitch,
@@ -104,10 +132,7 @@ namespace AHRS {
 
         if(xSemaphoreTake(*fused_mutex, 0)){
             *rpy = rpy_;
-            *q = Eigen::AngleAxisf(rpy_(2), Eigen::Vector3f::UnitZ()) *
-                 Eigen::AngleAxisf(rpy_(1), Eigen::Vector3f::UnitY()) *
-                 Eigen::AngleAxisf(rpy_(0), Eigen::Vector3f::UnitX());
-            q->normalize();
+            *q = eul2quat(rpy_);
 
             xSemaphoreGive(*fused_mutex);
         }
@@ -132,8 +157,10 @@ namespace AHRS {
             xSemaphoreGive(*g_mutex);
         }
         
+        // m_.normalize();
+
         float roll = atan2(a_.y(), a_.z());
-        float pitch = asin(-a_.x() / a_.norm());
+        float pitch = asin(-a_.x() / sqrt(a_.x() * a_.x() + a_.y() * a_.y() + a_.z() * a_.z()));
         rpy_xm = Eigen::Vector3f(
             roll,
             pitch,
@@ -143,7 +170,7 @@ namespace AHRS {
             )
         );
 
-        rpy_g += *rpy + g_ * dt;
+        rpy_g = *rpy + g_ * dt;
 
         if(xSemaphoreTake(*fused_mutex, 0)){
             *rpy = rpy_xm * alpha + rpy_g * (1 - alpha);
@@ -209,7 +236,12 @@ namespace AHRS {
         Eigen::Quaternion<float> grad_q(grad(0), grad(1), grad(2), grad(3));
         w_b.coeffs() += 2 * (q_.conjugate() * grad_q).coeffs() * dt;
 
-        Eigen::Quaternion<float> q_w(0 - zeta * w_b.w(), g_.x() - zeta * w_b.x(), g_.y() - zeta * w_b.y(), g_.z() - zeta * w_b.z());
+        Eigen::Quaternion<float> q_w(
+            0 - zeta * w_b.w(), 
+            g_.x() - zeta * w_b.x(), 
+            g_.y() - zeta * w_b.y(), 
+            g_.z() - zeta * w_b.z()
+        );
         Eigen::Quaternion<float> q_w_dot = q_ * q_w;
         q_w_dot.coeffs() *= 0.5;
 

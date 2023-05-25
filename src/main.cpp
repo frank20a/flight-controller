@@ -23,7 +23,7 @@ void setup()
     xTaskCreate(AHRS::measure_task, "MAG", 1024, &params_m, 1, NULL);
     xTaskCreate(AHRS::measure_task, "GYRO", 1024, &params_g, 1, NULL);
     // ==== AHRS ====
-    xTaskCreate(AHRS::run_ahrs, "AHRS", 1024, &ahrs_filter, 1, NULL);
+    ahrs_filter->start_task();
     // ==== RC ====
     // ==== Control ====
     // ==== GPS ====
@@ -32,7 +32,8 @@ void setup()
 void loop()
 {
     // print_imu_raw();
-    write_imu_raw();
+    write_imu_fused();
+    // print_imu_fused();
 
     delay(10);
 }
@@ -54,17 +55,20 @@ void write_imu_fused()
 
 void print_imu_fused()
 {
-    if (xSemaphoreTake(imu_fused_mutex, portMAX_DELAY))
+    if (xSemaphoreTake(uart0_mutex, portMAX_DELAY))
     {
-        Serial.print("Fused: ");
-        Serial.print(imu_fused.w());
-        Serial.print(", ");
-        Serial.print(imu_fused.x());
-        Serial.print(", ");
-        Serial.println(imu_fused.y());
-        Serial.print(", ");
-        Serial.println(imu_fused.z());
-        xSemaphoreGive(imu_fused_mutex);
+        if (xSemaphoreTake(imu_fused_mutex, portMAX_DELAY))
+        {
+            Serial.print("Fused:\n\tRoll:  ");
+            Serial.print(rpy_fused.x());
+            Serial.print("\n\tPitch: ");
+            Serial.print(rpy_fused.y());
+            Serial.print("\n\tYaw:   ");
+            Serial.println(rpy_fused.z());
+            xSemaphoreGive(imu_fused_mutex);
+        }
+
+        xSemaphoreGive(uart0_mutex);
     }
 }
 
