@@ -19,6 +19,7 @@ void setup()
     // ================= Start tasks =================
     delay(1000);
     // ==== IMU ====
+    AHRS::calibrate_gyro(spi2_mutex, lsm);
     xTaskCreate(AHRS::measure_task, "ACCEL", 1024, &params_a, 1, NULL);
     xTaskCreate(AHRS::measure_task, "MAG", 1024, &params_m, 1, NULL);
     xTaskCreate(AHRS::measure_task, "GYRO", 1024, &params_g, 1, NULL);

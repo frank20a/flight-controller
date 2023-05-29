@@ -97,7 +97,7 @@ AHRS::ahrs_init_parameters params_filter = {
     #endif
     AHRS::Madgwick *ahrs_filter = new AHRS::Madgwick(&params_filter, AHRS_MADGWICK_BETA, AHRS_MADGWICK_ZETA);
 #elif defined(AHRS_MADGWICK_OPTIMIZED)
-    #if !defined(AHRS_MADGWICK_BETA))
+    #if !defined(AHRS_MADGWICK_BETA) || !defined(AHRS_MADGWICK_ZETA)
         #error "AHRS_MADGWICK_BETA and/or AHRS_MADGWICK_ZETA not defined"
     #endif
     AHRS::MadgwickOptimized *ahrs_filter = new AHRS::MadgwickOptimized(&params_filter, AHRS_MADGWICK_BETA);

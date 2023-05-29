@@ -12,6 +12,8 @@
 namespace AHRS {
     float invSqrt(float x);
 
+    void calibrate_gyro(SemaphoreHandle_t &spi_mutex, LSM9DS0::LSM9DS0 &lsm);
+
     struct meas_task_parameters {
         LSM9DS0::LSM9DS0 *lsm;
         SemaphoreHandle_t *spi_mutex, *data_mutex;
@@ -121,7 +123,9 @@ namespace AHRS {
             void update() override;
 
         private:
-            float q0, q1, q2, q3;
+            float b_x = 1, b_z = 0;
+            float SEq_1 = 1, SEq_2 = 0, SEq_3 = 0, SEq_4 = 0;
+            float w_bx = 0, w_by = 0, w_bz = 0;
     };
 
     void run_ahrs(void *ahrs);
