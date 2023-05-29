@@ -31,7 +31,7 @@ void setup()
 
 void loop()
 {
-    // print_imu_raw();
+    // write_imu_raw();
     write_imu_fused();
     // print_imu_fused();
 

@@ -65,7 +65,7 @@ class AHRSMadgwick(AHRSEstimator):
             ])  # type: ignore
 
             h = qmul(q, qmul([0, mx, my, mz], qinv(q)))
-            bm = [0, np.sqrt(h[1]**2 + h[2]**2), h[3]]
+            bm = [np.sqrt(h[1]**2 + h[2]**2), 0, h[3]]
             # F_m = gen_F(q, bm, [mx, my, mz])
             # J_m = gen_J(q, bm)
             F_m = np.array([
@@ -87,7 +87,7 @@ class AHRSMadgwick(AHRSEstimator):
             q_w = np.array([0, gx, gy, gz], dtype=np.float64) - self.ZETA * w_b
             q_w_dot = 0.5 * qmul(q, q_w)
 
-            q_dot = q_w_dot - self.BETA * grad
+            q_dot = q_w_dot - self.BETA * grad.T
             q += q_dot * self.dt
             q /= np.linalg.norm(q)
 
@@ -100,5 +100,12 @@ class AHRSMadgwick(AHRSEstimator):
 
 
 if __name__ == "__main__":
-    ahrs = AHRSMadgwick(sys.argv[1], "Madgwick Filter Estimation")
+    if len(sys.argv) > 2:
+        beta = float(sys.argv[2])
+        zeta = float(sys.argv[3])
+    else:
+        beta = 0.0068
+        zeta = 0.00003
+        
+    ahrs = AHRSMadgwick(sys.argv[1], "Madgwick Filter Estimation", beta, zeta)
     ahrs.plot()

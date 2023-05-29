@@ -10,6 +10,8 @@
 #include <cmath>
 
 namespace AHRS {
+    float invSqrt(float x);
+
     struct meas_task_parameters {
         LSM9DS0::LSM9DS0 *lsm;
         SemaphoreHandle_t *spi_mutex, *data_mutex;
@@ -69,7 +71,7 @@ namespace AHRS {
             Gyro(void *params_) : AHRS(params_) { rpy_.setZero(); };
             void update() override;
 
-        private:
+        protected:
             Eigen::Vector3f rpy_;
     };
 
@@ -78,7 +80,7 @@ namespace AHRS {
             XMag(void *params_) : AHRS(params_) { rpy_.setZero(); };
             void update() override;
 
-        private:
+        protected:
             Eigen::Vector3f rpy_;
     };
 
@@ -91,7 +93,7 @@ namespace AHRS {
             };
             void update() override;
 
-        private:
+        protected:
             Eigen::Vector3f rpy_xm, rpy_g;
             float alpha = 0.02;
     };
@@ -106,9 +108,20 @@ namespace AHRS {
             };
             void update() override;
 
+        protected:
+            float beta, zeta;
+        
         private:
             Eigen::Quaternion<float> q_, w_b;
-            float beta, zeta;
+    };
+
+    class MadgwickOptimized : public Madgwick {
+        public:
+            MadgwickOptimized(void *params_, float beta) : Madgwick(params_, beta, 0.0f) {};
+            void update() override;
+
+        private:
+            float q0, q1, q2, q3;
     };
 
     void run_ahrs(void *ahrs);
