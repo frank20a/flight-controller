@@ -24,7 +24,7 @@ def test(port: str = 'COM9', baud: int = 576000):
                 break
 
 
-def measure_static(dur: int, port: str = 'COM9', baud: int = 576000):    
+def measure_static(dur: int, port: str = 'COM9', baud: int = 576000):
     with serial.Serial(port, baud) as ser:
         data = []
         
@@ -61,7 +61,7 @@ def measure_static(dur: int, port: str = 'COM9', baud: int = 576000):
     return res
 
 
-def measure_moving(dur: int, port: str = 'COM9', baud: int = 576000):    
+def measure_moving(dur: int, port: str = 'COM9', baud: int = 576000):
     with serial.Serial(port, baud) as ser:
         data = []
         
@@ -86,9 +86,9 @@ def measure_moving(dur: int, port: str = 'COM9', baud: int = 576000):
 
 def countdown(dur: int):
     for i in range(dur, 0, -1):
-        print (f'Starting in {i}...')
+        print(f'Starting in {i}...')
         time.sleep(1)
-    print ('Start!')
+    print('Start!')
     return True
 
 

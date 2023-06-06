@@ -1,10 +1,8 @@
 #pragma once
 
-#include <Arduino.h>
 #include <SPI.h>
+#include <cmath>
 #include <ArduinoEigen.h>
-
-// #include "datatypes.h"
 
 // Constants
 #define SENSORS_GRAVITY_EARTH (9.80665F)
@@ -47,16 +45,44 @@
 // Temperature: LSB per degree celsius
 #define TEMP_LSB_DEGREE_CELSIUS (8)
 
+// FIR Filter Sizes
+#define FIR_ACC_SIZE 27
+#define FIR_MAG_SIZE 9
+#define FIR_GYR_SIZE 13
+
 namespace LSM9DS0 {
     class LSM9DS0 {
     public:
-        LSM9DS0(SPIClass *spi_);
-        
+        LSM9DS0(
+            SPIClass *spi_, 
+            SemaphoreHandle_t *spi_mutex_, 
+            unsigned int acc_rate_,
+            Eigen::Vector3f *acc_,
+            SemaphoreHandle_t *acc_mutex_, 
+            unsigned int mag_rate_,
+            Eigen::Vector3f *mag_,
+            SemaphoreHandle_t *mag_mutex_, 
+            unsigned int gyr_rate_,
+            Eigen::Vector3f *gyr_,
+            SemaphoreHandle_t *gyr_mutex_
+        ){
+            spi = spi_;
+            spi_mutex = spi_mutex_;
+
+            acc_rate = acc_rate_;
+            acc = acc_;
+            acc_mutex = acc_mutex_;
+
+            mag_rate = mag_rate_;
+            mag = mag_;
+            mag_mutex = mag_mutex_;
+
+            gyr_rate = gyr_rate_;
+            gyr = gyr_;
+            gyr_mutex = gyr_mutex_;
+        }
         bool begin();
-        Eigen::Vector3f getAccel();
-        Eigen::Vector3f getMag();
-        Eigen::Vector3f getGyro();
-        float getTemp();
+        void calibrate_gyro();
 
         typedef enum {
             REGISTER_WHO_AM_I_G = 0x0F,
@@ -149,12 +175,84 @@ namespace LSM9DS0 {
         } gyro_rate_t;
 
     private:
+        // Primitive SPI Methods
         void write(bool type, byte reg, byte *buffer, byte len);
         void write(bool type, byte reg, byte value);
         void read(bool type, byte reg, byte *buffer, byte len);
         byte read(bool type, byte reg);
 
+        // Primitive Data Methods
+        Eigen::Vector3f getAccel();
+        Eigen::Vector3f getMag();
+        Eigen::Vector3f getGyro();
+        float getTemp();
+
+        // Task handling Methods
+        void task(byte type);
+        static void a_task_wrapper(void *pvParam) { static_cast<LSM9DS0*>(pvParam)->task(0); }
+        static void m_task_wrapper(void *pvParam) { static_cast<LSM9DS0*>(pvParam)->task(1); }
+        static void g_task_wrapper(void *pvParam) { static_cast<LSM9DS0*>(pvParam)->task(2); }
+
+        // Filter Methods
+        Eigen::Vector3f filter_update(Eigen::Vector3f data, float *h, float *hist, unsigned char s, unsigned char *idx);
+        Eigen::Vector3f filter_acc_update(Eigen::Vector3f data) { return filter_update(data, h_acc, acc_hist, FIR_ACC_SIZE, &acc_hist_idx); };
+        Eigen::Vector3f filter_mag_update(Eigen::Vector3f data) { return filter_update(data, h_mag, mag_hist, FIR_MAG_SIZE, &mag_hist_idx); };
+        Eigen::Vector3f filter_gyr_update(Eigen::Vector3f data) { return filter_update(data, h_gyr, gyr_hist, FIR_GYR_SIZE, &gyr_hist_idx); };
+
+        // Data handling Members
         SPIClass *spi;
+        SemaphoreHandle_t *spi_mutex, *acc_mutex, *mag_mutex, *gyr_mutex;
+        Eigen::Vector3f *acc, *mag, *gyr;
+        int acc_rate, mag_rate, gyr_rate;
         float a_scale, g_scale, m_scale;
+
+        // Filter Members
+        float h_acc[FIR_ACC_SIZE] = {
+            -0.002038178257063346,
+            -0.000891279528166555,
+            0.003834856328818554,
+            0.017848381513384096,
+            0.044520862883303446,
+            0.081744026456171404,
+            0.121367479368390846,
+            0.151911488670050360,
+            0.163404725130222167,
+            0.151911488670050360,
+            0.121367479368390860,
+            0.081744026456171431,
+            0.044520862883303459,
+            0.017848381513384092,
+            0.003834856328818555,
+            -0.000891279528166556,
+            -0.002038178257063346
+        };
+        float h_mag[FIR_MAG_SIZE] = {
+            -0.006140414697945076,
+            -0.013581674476961783,
+            0.051232297342717927,
+            0.265655560905450672,
+            0.405668461853476436,
+            0.265655560905450727,
+            0.051232297342717940,
+            -0.013581674476961786,
+            -0.006140414697945076
+        };
+        float h_gyr[FIR_GYR_SIZE] = {
+            -0.004301908977802689,
+            -0.005468682880462111,
+            0.003190449833585041,
+            0.045555056080673402,
+            0.126207997243587056,
+            0.210990162636316508,
+            0.247653852128205509,
+            0.210990162636316536,
+            0.126207997243587111,
+            0.045555056080673409,
+            0.003190449833585041,
+            -0.005468682880462115,
+            -0.004301908977802689
+        };
+        float acc_hist[FIR_ACC_SIZE * 3] = {0}, mag_hist[FIR_MAG_SIZE * 3] = {0}, gyr_hist[FIR_GYR_SIZE * 3] = {0};
+        unsigned char acc_hist_idx = 0, mag_hist_idx = 0, gyr_hist_idx = 0;
     };
 }

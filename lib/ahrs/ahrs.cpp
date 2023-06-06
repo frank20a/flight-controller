@@ -27,21 +27,6 @@ Eigen::Quaternion<float> eul2quat(Eigen::Vector3f rpy){
 
 
 namespace AHRS {
-    Eigen::Matrix3f Aa {
-        { 0.973209,  0.006248, -0.000107},
-        { 0.006248,  0.959535,  0.000811},
-        {-0.000107,  0.000811,  1.019086}
-    };
-    Eigen::Vector3f ba {-0.611425, 0.195279, -0.229477};
-
-    Eigen::Matrix3f Am {
-        { 1.024384, -0.067449,  0.005591},
-        {-0.067449,  0.984567, -0.059303},
-        { 0.005591, -0.059303,  1.093657}
-    };
-    Eigen::Vector3f bm {-15.850987, 46.848109, -15.884498};
-
-    Eigen::Vector3f bg {0.0, 0.0, 0.0};
 
     float invSqrt(float x) {
         float halfx = 0.5f * x;
@@ -53,50 +38,7 @@ namespace AHRS {
         return y;
     }
     
-    void calibrate_gyro(SemaphoreHandle_t &spi_mutex, LSM9DS0::LSM9DS0 &lsm){
-        if(xSemaphoreTake(spi_mutex, portMAX_DELAY)){
-            for(int i = 0; i < GYRO_CALIB_SAMPLES; i < i++){
-                Eigen::Vector3f tmp = lsm.getGyro();
-                bg += tmp;
-                vTaskDelay(pdMS_TO_TICKS(1000/150));
-            }
-            xSemaphoreGive(spi_mutex);
-        }
-        bg /= GYRO_CALIB_SAMPLES;
-    }
-
-    void measure_task(void *params_) {
-        meas_task_parameters *params = (meas_task_parameters *)params_;
-        Eigen::Vector3f tmp;
-
-        while(true) {
-            if(xSemaphoreTake(*(params->spi_mutex), portMAX_DELAY)){
-                if (params->type == 0) {
-                    tmp = params->lsm->getAccel();
-                    if(params->calib) tmp = Aa * (tmp - ba);
-                } else if (params->type == 1) {
-                    tmp = params->lsm->getMag();
-                    if(params->calib) tmp = Am * (tmp - bm);
-                } else if (params->type == 2) {
-                    tmp = params->lsm->getGyro();
-                    if(params->calib) tmp = tmp - bg;
-                } else 
-                    return;
-
-                xSemaphoreGive(*(params->spi_mutex));
-            }
-            
-
-            if(xSemaphoreTake(*(params->data_mutex), 0)){
-                *(params->shared_data) = tmp;
-                xSemaphoreGive(*(params->data_mutex));
-            }
-
-            vTaskDelay(pdMS_TO_TICKS(1000 / params->rate));
-        }
-    }
-
-    void AHRS::start_task() {
+    void AHRS::begin() {
         xTaskCreate(task_wrapper, "AHRS", 2048, this, 1, NULL);
     }
 

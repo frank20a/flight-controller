@@ -34,36 +34,21 @@ SemaphoreHandle_t gyro_raw_mutex = xSemaphoreCreateMutex();
 SPIClass SPI2 = SPIClass(HSPI);
 
 // Sensors
-LSM9DS0::LSM9DS0 lsm = LSM9DS0::LSM9DS0(&SPI2);
+LSM9DS0::LSM9DS0 lsm = LSM9DS0::LSM9DS0(
+    &SPI2,              // SPI Class
+    &spi2_mutex,        // SPI Mutex
+    400,                // Accelerometer Rate
+    &acc_raw,           // Accelerometer Data
+    &acc_raw_mutex,     // Accelerometer Mutex
+    100,                // Magnetometer Rate
+    &mag_raw,           // Magnetometer Data
+    &mag_raw_mutex,     // Magnetometer Mutex
+    190,                // Gyroscope Rate
+    &gyro_raw,          // Gyroscope Data
+    &gyro_raw_mutex     // Gyroscope Mutex
+);
 
 // Task Parameters
-AHRS::meas_task_parameters params_a = {
-    .lsm = &lsm,
-    .spi_mutex = &spi2_mutex,
-    .data_mutex = &acc_raw_mutex,
-    .shared_data = &acc_raw,
-    .rate = 400,
-    .type = IMU_SENSORTYPE_ACCEL,
-    .calib = USE_CALIBRATE,
-};
-AHRS::meas_task_parameters params_m = {
-    .lsm = &lsm,
-    .spi_mutex = &spi2_mutex,
-    .data_mutex = &mag_raw_mutex,
-    .shared_data = &mag_raw,
-    .rate = 100,
-    .type = IMU_SENSORTYPE_MAG,
-    .calib = USE_CALIBRATE,
-};
-AHRS::meas_task_parameters params_g = {
-    .lsm = &lsm,
-    .spi_mutex = &spi2_mutex,
-    .data_mutex = &gyro_raw_mutex,
-    .shared_data = &gyro_raw,
-    .rate = 190,
-    .type = IMU_SENSORTYPE_GYRO,
-    .calib = USE_CALIBRATE,
-};
 AHRS::ahrs_init_parameters params_filter = {
     .a = &acc_raw,
     .m = &mag_raw,

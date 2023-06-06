@@ -1,9 +1,22 @@
 #include "lsm9ds0.h"
 
 namespace LSM9DS0 {
-    LSM9DS0::LSM9DS0(SPIClass *spi_) {
-        spi = spi_;
-    }
+    
+    Eigen::Matrix3f Aa {
+        { 0.973209,  0.006248, -0.000107},
+        { 0.006248,  0.959535,  0.000811},
+        {-0.000107,  0.000811,  1.019086}
+    };
+    Eigen::Vector3f ba {-0.611425, 0.195279, -0.229477};
+
+    Eigen::Matrix3f Am {
+        { 1.024384, -0.067449,  0.005591},
+        {-0.067449,  0.984567, -0.059303},
+        { 0.005591, -0.059303,  1.093657}
+    };
+    Eigen::Vector3f bm {-15.850987, 46.848109, -15.884498};
+
+    Eigen::Vector3f bg {0.0, 0.0, 0.0};
 
     bool LSM9DS0::begin(){
         // Set the chip select pins as outputs
@@ -37,6 +50,16 @@ namespace LSM9DS0 {
         m_scale = MAG_MGAUSS_2GAUSS;
         write(GYROTYPE, REGISTER_CTRL_REG4_G, GYROSCALE_500DPS);
         g_scale = GYRO_DPS_DIGIT_500DPS;
+                        
+        // Calibrate the magnetometer
+        #ifdef CALIBRATE_IMU
+        calibrate_gyro();
+        #endif
+
+        // Start services
+        xTaskCreate(a_task_wrapper, "ACC", 2048, this, 1, NULL);
+        xTaskCreate(m_task_wrapper, "MAG", 2048, this, 1, NULL);
+        xTaskCreate(g_task_wrapper, "GYR", 2048, this, 1, NULL);
 
         return true;
     }
@@ -112,6 +135,113 @@ namespace LSM9DS0 {
         byte value;
         read(type, reg, &value, 1);
         return value;
+    }
+
+    void LSM9DS0::task(byte type) {
+        Eigen::Vector3f tmp, *shared_data;
+        SemaphoreHandle_t *data_mutex;
+        int rate;
+        switch(type) {
+        case 0:
+            data_mutex = this->acc_mutex;
+            rate = this->acc_rate;
+            shared_data = this->acc;
+            break;
+        case 1:
+            data_mutex = this->mag_mutex;
+            rate = this->mag_rate;
+            shared_data = this->mag;
+            break;
+        case 2: 
+            data_mutex = this->gyr_mutex;
+            rate = this->gyr_rate;
+            shared_data = this->gyr;
+            break;
+        }
+
+        while(true) {
+            // Get data
+            if(xSemaphoreTake(*(this->spi_mutex), portMAX_DELAY)){
+                if (type == 0) {
+                    tmp = this->getAccel();
+
+                    #ifdef CALIBRATE_IMU
+                    tmp = Aa * (tmp - ba);
+                    #endif
+                } else if (type == 1) {
+                    tmp = this->getMag();
+                    
+                    #ifdef CALIBRATE_IMU
+                    tmp = Am * (tmp - bm);
+                    #endif
+                } else if (type == 2) {
+                    tmp = this->getGyro();
+                    
+                    #ifdef CALIBRATE_IMU
+                    tmp = tmp - bg;
+                    #endif
+                } else 
+                    return;
+
+                xSemaphoreGive(*(this->spi_mutex));
+            }
+
+            // Filter data
+            #ifdef FILTER_IMU
+                switch(type) {
+                case 0:
+                    tmp = this->filter_acc_update(tmp);
+                    break;
+                case 1:
+                    tmp = this->filter_mag_update(tmp);
+                    break;
+                case 2: 
+                    tmp = this->filter_gyr_update(tmp);
+                    break;
+            }
+            #endif
+
+            // Update shared data
+            if(xSemaphoreTake(*(data_mutex), 0)){
+                *shared_data = tmp;
+                xSemaphoreGive(*(data_mutex));
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(1000 / rate));
+        }
+    }
+
+    void LSM9DS0::calibrate_gyro() {
+        bg.setZero();
+        delay(500);
+        if (xSemaphoreTake(*spi_mutex, portMAX_DELAY)) {
+            for (int i = 0; i < GYRO_CALIB_SAMPLES; i++) {
+                bg += this->getGyro();
+                vTaskDelay(pdMS_TO_TICKS(1000 / 150));
+            }
+            xSemaphoreGive(*spi_mutex);
+        }
+        bg /= GYRO_CALIB_SAMPLES;
+    }
+
+    Eigen::Vector3f LSM9DS0::filter_update(Eigen::Vector3f data, float *h, float *hist, unsigned char s, unsigned char *idx){
+        Eigen::Vector3f res;
+        res.setZero();
+    
+        hist[s*0 + *idx] = data.x();
+        hist[s*1 + *idx] = data.y();
+        hist[s*2 + *idx] = data.z();
+
+        for(int i = 0; i < s; i++){
+            res.x() += hist[s*0 + (i + *idx) % s] * h[i];
+            res.y() += hist[s*1 + (i + *idx) % s] * h[i];
+            res.z() += hist[s*2 + (i + *idx) % s] * h[i];
+        }
+
+        (*idx)++;
+        *idx %= s;
+
+        return res;
     }
 
 }

@@ -1,30 +1,10 @@
 #pragma once
 
-// #ifndef AHRS_ALG
-//     #error AHRS_ALG must be defined
-// #endif
-
 #include <freertos/FreeRTOS.h>
-#include <lsm9ds0.h>
 #include <ArduinoEigen.h>
 #include <cmath>
 
 namespace AHRS {
-    float invSqrt(float x);
-
-    void calibrate_gyro(SemaphoreHandle_t &spi_mutex, LSM9DS0::LSM9DS0 &lsm);
-
-    struct meas_task_parameters {
-        LSM9DS0::LSM9DS0 *lsm;
-        SemaphoreHandle_t *spi_mutex, *data_mutex;
-        Eigen::Vector3f *shared_data;
-        int rate;
-        byte type;
-        bool calib;
-    };
-
-    void measure_task(void *params_);
-
     struct ahrs_init_parameters {
         Eigen::Vector3f *a, *m, *g, *rpy;
         Eigen::Quaternion<float> *q;
@@ -53,16 +33,16 @@ namespace AHRS {
                 this->q->setIdentity();
                 this->rpy->setZero();
             }
+            void begin();
+
+        protected:
+            virtual void update() = 0;
             void task();
-            void start_task();
             static void task_wrapper(void *pvParam) {
                 static_cast<AHRS*>(pvParam)->task();
             }
-            virtual void update() = 0;
-
+            
             float dt;
-
-        protected:
             Eigen::Vector3f *a, *m, *g, *rpy;
             Eigen::Quaternion<float> *q;
             SemaphoreHandle_t *a_mutex, *m_mutex, *g_mutex, *fused_mutex;
@@ -128,5 +108,4 @@ namespace AHRS {
             float w_bx = 0, w_by = 0, w_bz = 0;
     };
 
-    void run_ahrs(void *ahrs);
 }
