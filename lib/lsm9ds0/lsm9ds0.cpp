@@ -57,9 +57,9 @@ namespace LSM9DS0 {
         #endif
 
         // Start services
-        xTaskCreate(a_task_wrapper, "ACC", 2048, this, 1, NULL);
-        xTaskCreate(m_task_wrapper, "MAG", 2048, this, 1, NULL);
-        xTaskCreate(g_task_wrapper, "GYR", 2048, this, 1, NULL);
+        xTaskCreatePinnedToCore(a_task_wrapper, "ACC", 1024, this, 1, NULL, 0);
+        xTaskCreatePinnedToCore(m_task_wrapper, "MAG", 1024, this, 1, NULL, 0);
+        xTaskCreatePinnedToCore(g_task_wrapper, "GYR", 1024, this, 1, NULL, 0);
 
         return true;
     }

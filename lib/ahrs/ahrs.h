@@ -33,7 +33,7 @@ namespace AHRS {
                 this->q->setIdentity();
                 this->rpy->setZero();
             }
-            void begin();
+            bool begin();
 
         protected:
             virtual void update() = 0;

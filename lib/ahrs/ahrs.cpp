@@ -38,8 +38,9 @@ namespace AHRS {
         return y;
     }
     
-    void AHRS::begin() {
-        xTaskCreate(task_wrapper, "AHRS", 2048, this, 1, NULL);
+    bool AHRS::begin() {
+        xTaskCreatePinnedToCore(task_wrapper, "AHRS", 512, this, 1, NULL, 0);
+        return true;
     }
 
     void AHRS::task() {
