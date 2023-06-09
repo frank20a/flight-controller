@@ -1,8 +1,13 @@
 #pragma once
 
+#include <Arduino.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <ArduinoEigen.h>
 #include <SPI.h>
 #include <cmath>
-#include <ArduinoEigen.h>
+
+#include "main_attr.h"
 
 // Constants
 #define SENSORS_GRAVITY_EARTH (9.80665F)
@@ -50,39 +55,30 @@
 #define FIR_MAG_SIZE 9
 #define FIR_GYR_SIZE 13
 
-namespace LSM9DS0 {
-    class LSM9DS0 {
+class LSM9DS0 : public Service {
     public:
-        LSM9DS0(
-            SPIClass *spi_, 
-            SemaphoreHandle_t *spi_mutex_, 
-            unsigned int acc_rate_,
-            Eigen::Vector3f *acc_,
-            SemaphoreHandle_t *acc_mutex_, 
-            unsigned int mag_rate_,
-            Eigen::Vector3f *mag_,
-            SemaphoreHandle_t *mag_mutex_, 
-            unsigned int gyr_rate_,
-            Eigen::Vector3f *gyr_,
-            SemaphoreHandle_t *gyr_mutex_
-        ){
-            spi = spi_;
-            spi_mutex = spi_mutex_;
+        LSM9DS0(MainAttr *attr_) {
+            spi = &(attr_->spi2);
+            spi_mutex = &(attr_->spi2_mutex);
 
-            acc_rate = acc_rate_;
-            acc = acc_;
-            acc_mutex = acc_mutex_;
+            acc = &(attr_->acc_raw);
+            acc_mutex = &(attr_->acc_raw_mutex);
 
-            mag_rate = mag_rate_;
-            mag = mag_;
-            mag_mutex = mag_mutex_;
+            mag = &(attr_->mag_raw);
+            mag_mutex = &(attr_->mag_raw_mutex);
 
-            gyr_rate = gyr_rate_;
-            gyr = gyr_;
-            gyr_mutex = gyr_mutex_;
+            gyr = &(attr_->gyr_raw);
+            gyr_mutex = &(attr_->gyr_raw_mutex);
+
+            this->set_rates(IMU_ACC_RATE, IMU_MAG_RATE, IMU_GYR_RATE);
         }
-        bool begin();
+        bool begin() override;
         void calibrate_gyro();
+        void set_rates(unsigned short acc_rate, unsigned short mag_rate, unsigned short gyr_rate) {
+            this->acc_rate = acc_rate;
+            this->mag_rate = mag_rate;
+            this->gyr_rate = gyr_rate;
+        }
 
         typedef enum {
             REGISTER_WHO_AM_I_G = 0x0F,
@@ -254,5 +250,4 @@ namespace LSM9DS0 {
         };
         float acc_hist[FIR_ACC_SIZE * 3] = {0}, mag_hist[FIR_MAG_SIZE * 3] = {0}, gyr_hist[FIR_GYR_SIZE * 3] = {0};
         unsigned char acc_hist_idx = 0, mag_hist_idx = 0, gyr_hist_idx = 0;
-    };
-}
+};

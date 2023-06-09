@@ -1,8 +1,14 @@
 #pragma once
 
+#include <Arduino.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <ArduinoEigen.h>
+#include <SPI.h>
 
-namespace CONTROLLER {
+#include "main_attr.h"
+
+namespace Controller {
     class PID {
         public:
             PID(float kp, float ki, float kd, float dt) { this->kp = kp; this->ki = ki; this->kd = kd; this->dt = dt; this->reset(); }
@@ -13,14 +19,14 @@ namespace CONTROLLER {
             float integral, derivative, prev_error;
     };
 
-    class MotorController {
+    class MotorController : public Service {
         public:
-            MotorController(
-                Eigen::Vector3f *g_,
-                Eigen::Vector3f *rpy_,
-                SemaphoreHandle_t *fused_mutex_,
-                SemaphoreHandle_t *gyro_mutex_
-            );
+            MotorController(MainAttr *attr_) : Service(attr_) {
+                pid_r = PID(PID_KP, PID_KI, PID_KD, PID_DT);
+                pid_p = PID(PID_KP, PID_KI, PID_KD, PID_DT);
+                pid_y = PID(PID_KP, PID_KI, PID_KD, PID_DT);
+                pid_z = PID(PID_KP, PID_KI, PID_KD, PID_DT);
+            };
             bool begin();
         
         protected:
@@ -29,8 +35,6 @@ namespace CONTROLLER {
                 static_cast<MotorController*>(pvParam)->update();
             }
 
-            Eigen::Vector3f *g, *rpy;
-            SemaphoreHandle_t *fused_mutex, *gyro_mutex;
             PID pid_r, pid_p, pid_y, pid_z;
 
     };

@@ -1,39 +1,38 @@
 #pragma once
 
+#include <Arduino.h>
 #include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <ArduinoEigen.h>
+#include <SPI.h>
 #include <cmath>
 
+#include "main_attr.h"
+
 namespace AHRS {
-    struct ahrs_init_parameters {
-        Eigen::Vector3f *a, *m, *g, *rpy;
-        Eigen::Quaternion<float> *q;
-        SemaphoreHandle_t *a_mutex, *m_mutex, *g_mutex, *fused_mutex;
-        float dt;
-    };
 
-    class AHRS {
+    class AHRS : public Service {
         public:
-            AHRS(void *params_){
-                ahrs_init_parameters *params = (ahrs_init_parameters *) params_;
+            AHRS(MainAttr *attr_) {
+                this->a = &(attr_->acc_raw);
+                this->m = &(attr_->mag_raw);
+                this->g = &(attr_->gyr_raw);
+                this->q = &(attr_->imu_fused);
+                this->rpy = &(attr_->rpy_fused);
 
-                this->a = params->a;
-                this->m = params->m;
-                this->g = params->g;
-                this->q = params->q;
-                this->rpy = params->rpy;
-
-                this->a_mutex = params->a_mutex;
-                this->m_mutex = params->m_mutex;
-                this->g_mutex = params->g_mutex;
-                this->fused_mutex = params->fused_mutex;
-
-                this->dt = params->dt;
+                this->a_mutex = &(attr_->acc_raw_mutex);
+                this->m_mutex = &(attr_->mag_raw_mutex);
+                this->g_mutex = &(attr_->gyr_raw_mutex);
+                this->fused_mutex = &(attr_->imu_fused_mutex);
 
                 this->q->setIdentity();
                 this->rpy->setZero();
+
+                this->set_dt(1.0 / AHRS_RATE);
             }
-            bool begin();
+            bool begin() override;
+            void set_dt(float dt_) { this->dt = dt_; };
+            virtual void set_gains(float gain_a, float gain_b) {};
 
         protected:
             virtual void update() = 0;
@@ -50,7 +49,7 @@ namespace AHRS {
 
     class Gyro : public AHRS {
         public:
-            Gyro(void *params_) : AHRS(params_) { rpy_.setZero(); };
+            Gyro(MainAttr *attr) : AHRS(attr) { rpy_.setZero(); };
             void update() override;
 
         protected:
@@ -59,7 +58,7 @@ namespace AHRS {
 
     class XMag : public AHRS {
         public:
-            XMag(void *params_) : AHRS(params_) { rpy_.setZero(); };
+            XMag(MainAttr *attr) : AHRS(attr) { rpy_.setZero(); };
             void update() override;
 
         protected:
@@ -68,12 +67,13 @@ namespace AHRS {
 
     class Complementary : public AHRS {
         public:
-            Complementary(void *params_, float gain) : AHRS(params_) { 
+            Complementary(MainAttr *attr) : AHRS(attr) { 
                 rpy_xm.setZero();
                 rpy_g.setZero();
-                alpha = gain;
+                this->set_gains(AHRS_GAIN_A, 0);
             };
             void update() override;
+            void set_gains(float gain_a, float gain_b) override { alpha = gain_a; };
 
         protected:
             Eigen::Vector3f rpy_xm, rpy_g;
@@ -82,13 +82,14 @@ namespace AHRS {
 
     class Madgwick : public AHRS {
         public:
-            Madgwick(void *params_, float beta, float zeta) : AHRS(params_) { 
-                this->beta = sqrt(3.0/4.0) * beta;
-                this->zeta = sqrt(3.0/4.0) * zeta;
+            Madgwick(MainAttr *attr) : AHRS(attr) { 
                 q_.setIdentity();
                 w_b.setIdentity();
+
+                this->set_gains(AHRS_GAIN_A, AHRS_GAIN_B);
             };
             void update() override;
+            void set_gains(float gain_a, float gain_b) override { beta = sqrt(3.0/4.0) * gain_a; zeta = sqrt(3.0/4.0) * gain_b; };
 
         protected:
             float beta, zeta;
@@ -99,7 +100,7 @@ namespace AHRS {
 
     class MadgwickOptimized : public Madgwick {
         public:
-            MadgwickOptimized(void *params_, float beta) : Madgwick(params_, beta, 0.0f) {};
+            MadgwickOptimized(MainAttr *attr) : Madgwick(attr) {};
             void update() override;
 
         private:
