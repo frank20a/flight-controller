@@ -1,7 +1,7 @@
 #include "debugger.h"
 
 bool Debugger::begin() {
-    xTaskCreatePinnedToCore(task_wrapper, "debugger", 1024, this, 1, NULL, 0);
+    xTaskCreatePinnedToCore(task_wrapper, "debugger", 2048, this, 1, NULL, 0);
     return true;
 }
 

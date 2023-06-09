@@ -39,7 +39,7 @@ namespace AHRS {
     }
     
     bool AHRS::begin() {
-        xTaskCreatePinnedToCore(task_wrapper, "AHRS", 1024, this, 1, NULL, 0);
+        xTaskCreatePinnedToCore(task_wrapper, "AHRS", 2048, this, 1, NULL, 0);
         return true;
     }
 
@@ -82,7 +82,8 @@ namespace AHRS {
             xSemaphoreGive(*m_mutex);
         }
         
-        m->normalize();
+        m_.normalize();
+        m_.z() *= -1;
 
         float roll = atan2(a_.y(), a_.z());
         float pitch = asin(-a_.x() / sqrt(a_.x() * a_.x() + a_.y() * a_.y() + a_.z() * a_.z()));
@@ -122,7 +123,8 @@ namespace AHRS {
             xSemaphoreGive(*g_mutex);
         }
         
-        // m_.normalize();
+        m_.normalize();
+        m_.z() *= -1;
 
         float roll = atan2(a_.y(), a_.z());
         float pitch = asin(-a_.x() / sqrt(a_.x() * a_.x() + a_.y() * a_.y() + a_.z() * a_.z()));
@@ -170,6 +172,7 @@ namespace AHRS {
         // Normalize accelerometer and magnetometer data
         a_.normalize();
         m_.normalize();
+        m_.z() *= -1;
         
         // Calculate reference direction of magnetic field
         Eigen::Quaternion<float> h = q_ * Eigen::Quaternion<float>(0, m_.x(), m_.y(), m_.z()) * q_.conjugate();
