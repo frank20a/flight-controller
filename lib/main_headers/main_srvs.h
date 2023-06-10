@@ -2,8 +2,8 @@
 
 #include "ahrs.h"
 #include "lsm9ds0.h"
-// #include "controller.h"
-// #include "radio.h"
+#include "controller.h"
+#include "radio.h"
 // #include "cmd_handler.h"
 #ifdef DEBUG
     #include "debugger.h"
@@ -29,12 +29,14 @@ struct MainSrvs {
     #endif
 
     // Debugger
+    #ifdef DEBUG
     Debugger debugger;
+    #endif
 
     // // Controller
-    // CONTROLLER::Controller controller;
+    Controller::MotorController controller;
 
     // // Radio
-    // RADIO::Radio radio;
+    Radio radio;
     
 };

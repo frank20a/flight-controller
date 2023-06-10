@@ -19,13 +19,23 @@ void setup() {
         while (1);
     }
     // ==== RC ====
+    if (!main_srvs.radio.begin()) {
+        Serial.println("Failed to initialize RC.");
+        while (1);
+    }
     // ==== Control ====
+    if (!main_srvs.controller.begin()) {
+        Serial.println("Failed to initialize Controller.");
+        while (1);
+    }
     // ==== GPS ====
     // ==== Debugger ====
+    #ifdef DEBUG
     if (!main_srvs.debugger.begin()) {
         Serial.println("Failed to initialize Debugger.");
         while (1);
     }
+    #endif
 }
 
 void loop() {

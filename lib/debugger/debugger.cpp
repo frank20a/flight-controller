@@ -5,7 +5,7 @@ bool Debugger::begin() {
     return true;
 }
 
-void Debugger::config(byte flags, unsigned short dt_) {
+void Debugger::config(char flags, unsigned short dt_) {
     debug_io_mode = flags & 0b00000001;
     debug_type = (flags & 0b00001110) >> 1;
     dt = dt_;
@@ -15,8 +15,8 @@ void Debugger::debug_msg() {
     while(true){
         if(debug_type == 0b000) imu_debugger();
         else if(debug_type == 0b001) ahrs_debugger();
-        else if(debug_type == 0b010) ;
-        else if(debug_type == 0b011) ;
+        else if(debug_type == 0b010) radio_debugger();
+        else if(debug_type == 0b011) control_debugger();
         else if(debug_type == 0b100) ;
         else if(debug_type == 0b101) ;
         else if(debug_type == 0b110) ;
@@ -91,6 +91,58 @@ void Debugger::imu_debugger() {
             xSemaphoreGive(attr->gyr_raw_mutex);
         }
 
+        xSemaphoreGive(attr->uart0_mutex);
+    }
+}
+
+void Debugger::radio_debugger() {
+    ControllerLevels tmp;
+
+    if (xSemaphoreTake(attr->controller_level_mutex, portMAX_DELAY)) {
+        tmp = attr->controller_level;
+        xSemaphoreGive(attr->controller_level_mutex);
+    }
+
+    if (xSemaphoreTake(attr->uart0_mutex, portMAX_DELAY)) {
+        if (!debug_io_mode)
+            Serial.write((byte *)&(attr->controller_level), sizeof(attr->controller_level));
+        else {
+            Serial.print("CH00: ");
+            Serial.println(attr->controller_level.ch00);
+            Serial.print("CH01: ");
+            Serial.println(attr->controller_level.ch01);
+            Serial.print("CH02: ");
+            Serial.println(attr->controller_level.ch02);
+            Serial.print("CH03: ");
+            Serial.println(attr->controller_level.ch03);
+            Serial.println();
+        }
+        xSemaphoreGive(attr->uart0_mutex);
+    }
+}
+
+void Debugger::control_debugger() {
+    float motor_lvl[4];
+
+    if (xSemaphoreTake(attr->motor_level_mutex, portMAX_DELAY)) {
+        memcpy(motor_lvl, attr->motor_level, 4*sizeof(float));
+        xSemaphoreGive(attr->motor_level_mutex);
+    }
+
+    if (xSemaphoreTake(attr->uart0_mutex, portMAX_DELAY)) {
+        if (!debug_io_mode)
+            Serial.write((byte *)&(motor_lvl), sizeof(motor_lvl));
+        else {
+            Serial.print("MOTOR0: ");
+            Serial.println(motor_lvl[0]);
+            Serial.print("MOTOR1: ");
+            Serial.println(motor_lvl[1]);
+            Serial.print("MOTOR2: ");
+            Serial.println(motor_lvl[2]);
+            Serial.print("MOTOR3: ");
+            Serial.println(motor_lvl[3]);
+            Serial.println();
+        }
         xSemaphoreGive(attr->uart0_mutex);
     }
 }

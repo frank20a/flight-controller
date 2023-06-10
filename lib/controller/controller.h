@@ -5,14 +5,22 @@
 #include <freertos/task.h>
 #include <ArduinoEigen.h>
 #include <SPI.h>
+#include <ESP32Servo.h>
 
 #include "main_attr.h"
 
 namespace Controller {
     class PID {
         public:
-            PID(float kp, float ki, float kd, float dt) { this->kp = kp; this->ki = ki; this->kd = kd; this->dt = dt; this->reset(); }
+            PID() { this->reset();}
+            PID(float kp, float ki, float kd, float dt) {
+                this->set_gains(kp, ki, kd); 
+                this->set_dt(dt); 
+                this->reset();
+            }
             float update(float error);
+            void set_gains(float kp, float ki, float kd) { this->kp = kp; this->ki = ki; this->kd = kd; }
+            void set_dt(float dt) { this->dt = dt; }
             void reset();
         private:
             float kp, ki, kd, dt;
@@ -22,20 +30,39 @@ namespace Controller {
     class MotorController : public Service {
         public:
             MotorController(MainAttr *attr_) : Service(attr_) {
-                pid_r = PID(PID_KP, PID_KI, PID_KD, PID_DT);
-                pid_p = PID(PID_KP, PID_KI, PID_KD, PID_DT);
-                pid_y = PID(PID_KP, PID_KI, PID_KD, PID_DT);
-                pid_z = PID(PID_KP, PID_KI, PID_KD, PID_DT);
+                dt = 1.0 / PID_RATE;
+
+                pids[0] = PID(PID_ROLL_GAINS, dt);
+                pids[1] = PID(PID_PITCH_GAINS, dt);
+                pids[2] = PID(PID_YAW_GAINS, dt);
+                pids[3] = PID(PID_HEIGHT_GAINS, dt);               
             };
+            void set_pid_gains(unsigned short i, float kp, float ki, float kd) {
+                if (i <= 4) return;
+                pids[i].set_gains(kp, ki, kd);
+            }
+            void set_pid_dt(float dt_) {
+                this->dt = dt_;
+                for(int i = 0; i < 4; i++)
+                    pids[i].set_dt(dt_);
+            }
             bool begin();
+            void reset() {
+                for(int i = 0; i < 4; i++){
+                    pids[i].reset();
+                    motors[i].writeMicroseconds(0);
+                }
+            }
         
         protected:
             void update();
+            void task();
             static void task_wrapper(void *pvParam) {
-                static_cast<MotorController*>(pvParam)->update();
+                static_cast<MotorController*>(pvParam)->task();
             }
 
-            PID pid_r, pid_p, pid_y, pid_z;
-
+            float dt;
+            PID pids[4];
+            Servo motors[4];
     };
 }

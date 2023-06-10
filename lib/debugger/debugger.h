@@ -14,7 +14,7 @@ class Debugger : public Service {
             this->config(DEBUG_FLAGS, DEBUG_PERIOD);
         }
         bool begin() override;
-        void config(byte flags, unsigned short dt_);
+        void config(char flags, unsigned short dt_);
 
     private:
         static void task_wrapper(void *pvParam) {
@@ -23,8 +23,10 @@ class Debugger : public Service {
         void debug_msg();
         void imu_debugger();
         void ahrs_debugger();
+        void radio_debugger();
+        void control_debugger();
 
         bool debug_io_mode;
-        byte debug_type;
+        char debug_type;
         unsigned short dt;
 };

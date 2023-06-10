@@ -19,10 +19,14 @@ MainAttr main_attr = {
     .mag_raw = Eigen::Vector3f(0, 0, 0),
     .gyr_raw = Eigen::Vector3f(0, 0, 0),
     .rpy_fused = Eigen::Vector3f(0, 0, 0),
+    .motor_level = {0, 0, 0, 0},
+    .controller_level = {0, 0, 0, 0},
     .acc_raw_mutex = xSemaphoreCreateMutex(),
     .mag_raw_mutex = xSemaphoreCreateMutex(),
     .gyr_raw_mutex = xSemaphoreCreateMutex(),
     .imu_fused_mutex = xSemaphoreCreateMutex(),
+    .motor_level_mutex = xSemaphoreCreateMutex(),
+    .controller_level_mutex = xSemaphoreCreateMutex(),
     .spi2 = SPIClass(HSPI),
 };
 
@@ -42,5 +46,9 @@ MainSrvs main_srvs = {
         #elif defined(AHRS_MADGWICK_OPTIMIZED)
             AHRS::MadgwickOptimized(&main_attr),
         #endif
+    #ifdef DEBUG
     .debugger = Debugger(&main_attr),
+    #endif
+    .controller = Controller::MotorController(&main_attr),
+    .radio = Radio(&main_attr),
 };
