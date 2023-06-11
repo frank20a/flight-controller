@@ -30,16 +30,16 @@ bool LSM9DS0::begin(){
     byte buf;
 
     // Enable accelerometer continuous
-    write(XMTYPE, REGISTER_CTRL_REG1_XM,  0b00001111 | ACCELDATARATE_400HZ);
+    write(XMTYPE, REGISTER_CTRL_REG1_XM,  0b00001111 | ACCELDATARATE);
 
     // Enable the magnetometer continuous & temperature sensor
-    write(XMTYPE, REGISTER_CTRL_REG5_XM, 0b11100000 | MAGDATARATE_100HZ);
+    write(XMTYPE, REGISTER_CTRL_REG5_XM, 0b11100000 | MAGDATARATE);
 
     // Enable the magnetometer continuous
     write(XMTYPE, REGISTER_CTRL_REG7_XM, 0);
 
     // Enable gyro continuous
-    write(GYROTYPE, REGISTER_CTRL_REG1_G, 0x0F | GYRODATARATE_190HZ);
+    write(GYROTYPE, REGISTER_CTRL_REG1_G, 0x0F | GYRODATARATE);
 
     // Set sensor full scale
     write(XMTYPE, REGISTER_CTRL_REG2_XM, ACCELRANGE_8G);

@@ -11,6 +11,15 @@ bool Radio::begin() {
     radio.openWritingPipe(addr[0]);
     radio.startListening();
 
+    if(xSemaphoreTake(attr->controller_level_mutex, portMAX_DELAY)) {
+        memset(&(attr->controller_level), 0, sizeof(ControllerLevels));
+        attr->controller_level.ch00 = RADIO_THROTTLE_DEFAULT;
+        attr->controller_level.ch01 = RADIO_ROLL_DEFAULT;
+        attr->controller_level.ch02 = RADIO_PITCH_DEFAULT;
+        attr->controller_level.ch03 = RADIO_YAW_RATE_DEFAULT;
+        xSemaphoreGive(attr->controller_level_mutex);
+    }
+
     xTaskCreatePinnedToCore(task_wrapper, "Radio", 10000, this, 1, NULL, 0);
 
     return true;
@@ -27,6 +36,10 @@ void Radio::task() {
             if(++c > 10 * RADIO_TIMEOUT * RADIO_RATE) {
                 if(xSemaphoreTake(attr->controller_level_mutex, portMAX_DELAY)) {
                     memset(&(attr->controller_level), 0, sizeof(ControllerLevels));
+                    attr->controller_level.ch00 = RADIO_THROTTLE_DEFAULT;
+                    attr->controller_level.ch01 = RADIO_ROLL_DEFAULT;
+                    attr->controller_level.ch02 = RADIO_PITCH_DEFAULT;
+                    attr->controller_level.ch03 = RADIO_YAW_RATE_DEFAULT;
                     xSemaphoreGive(attr->controller_level_mutex);
                 }
             }

@@ -30,12 +30,12 @@ namespace Controller {
     class MotorController : public Service {
         public:
             MotorController(MainAttr *attr_) : Service(attr_) {
-                dt = 1.0 / PID_RATE;
+                dt = 1.0 / (float)PID_RATE;
 
-                pids[0] = PID(PID_ROLL_GAINS, dt);
-                pids[1] = PID(PID_PITCH_GAINS, dt);
-                pids[2] = PID(PID_YAW_GAINS, dt);
-                pids[3] = PID(PID_HEIGHT_GAINS, dt);               
+                pids[0] = PID(PID_HEIGHT_GAINS, dt);
+                pids[1] = PID(PID_ROLL_GAINS, dt);
+                pids[2] = PID(PID_PITCH_GAINS, dt);
+                pids[3] = PID(PID_YAW_GAINS, dt);
             };
             void set_pid_gains(unsigned short i, float kp, float ki, float kd) {
                 if (i <= 4) return;

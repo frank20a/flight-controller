@@ -7,7 +7,7 @@ namespace Controller {
 
     float bitbang(float x, float a) {
         if (x > a || x < -a)
-            return a;
+            return x;
         return 0;
     }
 
@@ -45,6 +45,7 @@ namespace Controller {
         pinMode(ESC3, OUTPUT);
         pinMode(ESC4, OUTPUT);
 
+        #ifndef MOTORS_DISABLED
         if (motors.attach(ESC1, 1000, 2000) > 15) {
             Serial.println("Failed to attach ESC1");
             return false;
@@ -68,7 +69,7 @@ namespace Controller {
 
         for(int i = 0; i < 4; i++)
             motors.write(pins[i], 1000);
-        
+        #endif
 
         xTaskCreatePinnedToCore(task_wrapper, "AHRS", 2048, this, 1, NULL, 1);
         return true;
@@ -132,18 +133,23 @@ namespace Controller {
             xSemaphoreGive(attr->controller_level_mutex);
         } else return;
 
+        // Calculate Errors
+        float e_r = mapf(controller.ch01, 0, 1023, -MAX_CRAFT_ANGLE, MAX_CRAFT_ANGLE) - bitbang(state.x(), 0.015);
+        float e_p = mapf(controller.ch02, 0, 1023, -MAX_CRAFT_ANGLE, MAX_CRAFT_ANGLE) - bitbang(state.y(), 0.015);
+        float e_y = mapf(controller.ch03, 0, 1023, -MAX_CRAFT_YAW_RATE, MAX_CRAFT_YAW_RATE) - bitbang(yaw_rate, 0.0075);
+
         // Update PIDs
         float t = mapf(controller.ch00, 0, 1023, 0, MAX_THROTTLE);
-        float r = pids[1].update(mapf(controller.ch01, 0, 1023, -MAX_CRAFT_ANGLE, MAX_CRAFT_ANGLE) - state.x());
-        float p = pids[2].update(mapf(controller.ch02, 0, 1023, -MAX_CRAFT_ANGLE, MAX_CRAFT_ANGLE) - state.y());
-        float y = pids[3].update(mapf(controller.ch03, 0, 1023, -MAX_CRAFT_YAW_RATE, MAX_CRAFT_YAW_RATE) - bitbang(yaw_rate, 0.02));
+        float r = pids[1].update(e_r);
+        float p = pids[2].update(e_p);
+        float y = pids[3].update(e_y);
 
         // Motor Mixing Algorithm
-        if (t > MIN_THROTTLE) {
-            motor_lvl[0] = clip(t + r + p + y, 0, 1);
+        if (t >= MIN_THROTTLE) {
+            motor_lvl[0] = clip(t - r - p + y, 0, 1);
             motor_lvl[1] = clip(t - r + p - y, 0, 1);
-            motor_lvl[2] = clip(t + r - p - y, 0, 1);
-            motor_lvl[3] = clip(t - r - p + y, 0, 1);
+            motor_lvl[2] = clip(t + r + p + y, 0, 1);
+            motor_lvl[3] = clip(t + r - p - y, 0, 1);
         } else {
             motor_lvl[0] = t;
             motor_lvl[1] = t;
@@ -158,9 +164,11 @@ namespace Controller {
         } else return;
 
         // Set Motor Level
+        #ifndef MOTORS_DISABLED
         for (int i = 0; i < 4; i++) {
             motors.write(pins[i], 1000 + 1000 * motor_lvl[i]);
         }
+        #endif
 
     }
 };
