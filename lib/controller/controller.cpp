@@ -37,23 +37,69 @@ namespace Controller {
     }
     
     bool MotorController::begin() {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++)
             pids[i].reset();
-            motors[i].setPeriodHertz(50);
+
+        pinMode(ESC1, OUTPUT);
+        pinMode(ESC2, OUTPUT);
+        pinMode(ESC3, OUTPUT);
+        pinMode(ESC4, OUTPUT);
+
+        if (motors.attach(ESC1, 1000, 2000) > 15) {
+            Serial.println("Failed to attach ESC1");
+            return false;
+        }
+        if (motors.attach(ESC2, 1000, 2000) > 15) {
+            Serial.println("Failed to attach ESC2");
+            return false;
+        }
+        if (motors.attach(ESC3, 1000, 2000) > 15) {
+            Serial.println("Failed to attach ESC3");
+            return false;
+        }
+        if (motors.attach(ESC4, 1000, 2000) > 15) {
+            Serial.println("Failed to attach ESC4");
+            return false;
         }
 
-        ESP32PWM::allocateTimer(0);
-        ESP32PWM::allocateTimer(1);
-        ESP32PWM::allocateTimer(2);
-        ESP32PWM::allocateTimer(3);
+        #ifdef CALIBRATE_ESC
+        calibrate_esc();
+        #endif
 
-        motors[0].attach(ESC1);
-        motors[1].attach(ESC2);
-        motors[2].attach(ESC3);
-        motors[3].attach(ESC4);
+        for(int i = 0; i < 4; i++)
+            motors.write(pins[i], 1000);
+        
 
         xTaskCreatePinnedToCore(task_wrapper, "AHRS", 2048, this, 1, NULL, 1);
         return true;
+    }
+
+    void MotorController::calibrate_esc() {
+        Serial.println("Calibrating ESCs. Start by disconnecting the battery.");
+        Serial.println("Send any character to continue...");
+        
+        while(!Serial.available());
+        while(Serial.available()) Serial.read();
+
+        for(int i = 0; i < 4; i++)
+            motors.write(pins[i], 2000);
+        Serial.println("Connect the battery now. You will hear two beeps.");
+        Serial.println("Wait a bit and send any character to continue...");
+        
+        while(!Serial.available());
+        while(Serial.available()) Serial.read();
+
+        for(int i = 0; i < 4; i++)
+            motors.write(pins[i], 1000);
+
+        Serial.println("Wait a little bit, you will hear two more beeps.");
+        Serial.println("Wait a bit more and send any character to continue...");
+
+        while(!Serial.available());
+        while(Serial.available()) Serial.read();
+
+        Serial.println("Now the ESCs are calibrated. Restart/Reflash the board and run normally.");
+        while(true);
     }
 
     void MotorController::task() {
@@ -113,7 +159,7 @@ namespace Controller {
 
         // Set Motor Level
         for (int i = 0; i < 4; i++) {
-            motors[i].writeMicroseconds(1000 + 1000 * motor_lvl[i]);
+            motors.write(pins[i], 1000 + 1000 * motor_lvl[i]);
         }
 
     }

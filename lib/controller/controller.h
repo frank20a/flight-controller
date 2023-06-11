@@ -5,7 +5,7 @@
 #include <freertos/task.h>
 #include <ArduinoEigen.h>
 #include <SPI.h>
-#include <ESP32Servo.h>
+#include <Servo.h>
 
 #include "main_attr.h"
 
@@ -50,9 +50,10 @@ namespace Controller {
             void reset() {
                 for(int i = 0; i < 4; i++){
                     pids[i].reset();
-                    motors[i].writeMicroseconds(0);
+                    motors.write(pins[i], 1000);
                 }
             }
+            void calibrate_esc();
         
         protected:
             void update();
@@ -63,6 +64,7 @@ namespace Controller {
 
             float dt;
             PID pids[4];
-            Servo motors[4];
+            uint8_t pins[4] = {ESC1, ESC2, ESC3, ESC4};
+            Servo motors;
     };
 }

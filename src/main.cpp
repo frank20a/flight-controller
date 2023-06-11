@@ -6,7 +6,7 @@ void setup() {
     main_attr.spi2.begin(SCLK2, MISO2, MOSI2, CS_XMAG); // Start SPI2
 
     delay(1000);
-
+    
     // ================= Start Services =================
     // ==== IMU ====
     if (!main_srvs.lsm.begin()) {
@@ -29,6 +29,7 @@ void setup() {
         while (1);
     }
     // ==== GPS ====
+
     // ==== Debugger ====
     #ifdef DEBUG
     if (!main_srvs.debugger.begin()) {
